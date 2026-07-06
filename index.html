@@ -124,20 +124,32 @@
             <input type="text" id="nombre" class="form-control" placeholder="Nombre">
         </div>
 
-        <div class="col-md-4 mb-3">
-            <input type="text" id="descripcion" class="form-control" placeholder="Descripción">
-        </div>
+        
+<div class="col-12 mb-3">
 
-        <div class="col-md-4 mb-3">
-            
-<select id="categoria" class="form-control">
-    <option value="">Selecciona una categoría</option>
-    <option value="Estudio">Estudio</option>
-    <option value="Tarea">Tarea</option>
-    <option value="Examen">Examen</option>
-    <option value="Proyecto">Proyecto</option>
-    <option value="Otro">Otro</option>
-</select>
+    <input type="text" id="descripcion" class="form-control" placeholder="Descripción">
+
+    <div id="errorDescripcion"></div>
+
+</div>
+
+
+        
+<div class="col-12 mb-3">
+
+    <select id="categoria" class="form-control">
+        <option value="">Selecciona una categoría</option>
+        <option value="Estudio">Estudio</option>
+        <option value="Tarea">Tarea</option>
+        <option value="Examen">Examen</option>
+        <option value="Proyecto">Proyecto</option>
+        <option value="Otro">Otro</option>
+    </select>
+
+    <div id="errorCategoria"></div>
+
+</div>
+
 
         </div>
 
@@ -168,9 +180,15 @@
                     <input type="email" class="form-control" placeholder="Correo">
                 </div>
 
-                <div class="col-12 mb-3">
-                    <input type="text" class="form-control" placeholder="Asunto">
-                </div>
+                
+<div class="col-12 mb-3">
+
+    <input type="text" id="nombre" class="form-control" placeholder="Nombre">
+
+    <div id="errorNombre"></div>
+
+</div>
+
 
                 <div class="col-12 mb-3">
                     <textarea class="form-control" placeholder="Mensaje"></textarea>
