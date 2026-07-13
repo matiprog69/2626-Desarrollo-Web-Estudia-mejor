@@ -12,6 +12,31 @@ const mensaje = document.getElementById("mensaje");
 const total = document.getElementById("total");
 
 let contador = 0;
+let actividades = [];
+
+/* SERVICIOS DINÁMICOS */
+
+const servicios = [
+    "Guías de estudio",
+    "Planificación de tareas",
+    "Consejos de productividad",
+    "Herramientas digitales"
+];
+
+const contenedorServicios =
+document.getElementById("contenedorServicios");
+
+servicios.forEach(servicio => {
+
+    contenedorServicios.innerHTML += `
+        <div class="col-md-3">
+            <div class="card p-3 text-center m-2">
+                ${servicio}
+            </div>
+        </div>
+    `;
+
+});
 
 function validarNombre() {
     if (nombre.value.trim().length < 3) {
@@ -96,7 +121,15 @@ formulario.addEventListener("submit", function(e) {
             '<div class="alert alert-danger">Corrija los errores antes de registrar.</div>';
 
         return;
+        
     }
+const nuevaActividad = {
+    nombre: nombre.value,
+    descripcion: descripcion.value,
+    categoria: categoria.value
+};
+
+actividades.push(nuevaActividad);
 
     const item = document.createElement("li");
 
@@ -113,12 +146,19 @@ formulario.addEventListener("submit", function(e) {
 
     botonEliminar.addEventListener("click", function() {
 
-        lista.removeChild(item);
+    lista.removeChild(item);
+    actividades.pop();
 
-        contador--;
+    contador--;
 
-        total.textContent = contador;
-    });
+    total.textContent = contador;
+
+    if (contador === 0) {
+
+        mensaje.innerHTML =
+            '<div class="alert alert-warning">No existen registros.</div>';
+    }
+});
 
     item.appendChild(botonEliminar);
 
@@ -128,8 +168,13 @@ formulario.addEventListener("submit", function(e) {
 
     total.textContent = contador;
 
+   if (contador > 0) {
+
     mensaje.innerHTML =
-        '<div class="alert alert-success">Registro agregado correctamente.</div>';
+        `<div class="alert alert-success">
+            Existen ${contador} registros almacenados.
+        </div>`;
+}
 
     formulario.reset();
 

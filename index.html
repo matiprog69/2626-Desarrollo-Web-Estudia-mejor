@@ -13,13 +13,15 @@
 </head>
 
 <body>
-
+<!-- FUTURA PLANTILLA base.html -->
+<!-- HEADER REUTILIZABLE -->
     <!-- HEADER -->
     <header class="text-center p-4 text-white bg-primary">
         <h1>Estudia Mejor</h1>
         <p>Ayuda a mejorar los hábitos de estudio</p>
     </header>
 
+<!-- MENÚ REUTILIZABLE -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
 
@@ -41,7 +43,7 @@
         </div>
     </nav>
 
-   
+   <!-- CONTENIDO PRINCIPAL -->
     <main class="container">
 
         <!-- INICIO -->
@@ -76,33 +78,9 @@
         <section id="servicios" class="p-3">
             <h2 class="text-center mb-4">Servicios</h2>
 
-            <div class="row">
-
-                <div class="col-md-3">
-                    <div class="card p-3 text-center m-2">
-                        Guías de estudio
-                    </div>
+            <div class="row" id="contenedorServicios">
                 </div>
 
-                <div class="col-md-3">
-                    <div class="card p-3 text-center m-2">
-                        Planificación de tareas
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card p-3 text-center m-2">
-                        Consejos de productividad
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card p-3 text-center m-2">
-                        Herramientas digitales
-                    </div>
-                </div>
-
-            </div>
         </section>
 
    
@@ -122,6 +100,8 @@
 
         <div class="col-md-4 mb-3">
             <input type="text" id="nombre" class="form-control" placeholder="Nombre">
+            <div id="errorNombre"></div>
+
         </div>
 
         
@@ -169,36 +149,25 @@
 
 </section>
 
-            
             <form class="row">
 
-                <div class="col-md-6 mb-3">
-                    <input type="text" class="form-control" placeholder="Nombre">
-                </div>
+    <div class="col-md-6 mb-3">
+        <input type="text" class="form-control" placeholder="Nombre">
+    </div>
 
-                <div class="col-md-6 mb-3">
-                    <input type="email" class="form-control" placeholder="Correo">
-                </div>
+    <div class="col-md-6 mb-3">
+        <input type="email" class="form-control" placeholder="Correo">
+    </div>
 
-                
-<div class="col-12 mb-3">
+    <div class="col-12 mb-3">
+        <textarea class="form-control" placeholder="Mensaje"></textarea>
+    </div>
 
-    <input type="text" id="nombre" class="form-control" placeholder="Nombre">
+    <div class="text-center">
+        <button class="btn btn-primary">Enviar</button>
+    </div>
 
-    <div id="errorNombre"></div>
-
-</div>
-
-
-                <div class="col-12 mb-3">
-                    <textarea class="form-control" placeholder="Mensaje"></textarea>
-                </div>
-
-                <div class="text-center">
-                    <button class="btn btn-primary">Enviar</button>
-                </div>
-
-            </form>
+</form>
 
     
             <div class="text-center mt-3">
@@ -226,6 +195,7 @@
         <p>Horario: Lunes a Viernes de 08:00 a 18:00</p>
     </aside>
 
+<!-- FOOTER REUTILIZABLE -->
     <!-- FOOTER -->
     <footer class="bg-dark text-white text-center p-3">
         <p>Sarango Calva Fernando Matías - Desarrollo Web - 2026</p>
