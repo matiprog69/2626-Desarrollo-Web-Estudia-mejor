@@ -9,12 +9,14 @@ const errorCategoria = document.getElementById("errorCategoria");
 
 const lista = document.getElementById("lista");
 const mensaje = document.getElementById("mensaje");
+const alertaBootstrap = document.getElementById("alertaBootstrap");
 const total = document.getElementById("total");
+const spinnerCarga = document.getElementById("spinnerCarga");
 
 let contador = 0;
 let actividades = [];
 
-/* SERVICIOS DINÁMICOS */
+/* SOS DINÁMICOS */
 
 const servicios = [
     "Guías de estudio",
@@ -25,16 +27,25 @@ const servicios = [
 
 const contenedorServicios =
 document.getElementById("contenedorServicios");
-
 servicios.forEach(servicio => {
 
     contenedorServicios.innerHTML += `
-        <div class="col-md-3">
-            <div class="card p-3 text-center m-2">
+<div class="col-md-3 mb-3">
+
+    <div class="card card-servicio h-100">
+
+        <div class="card-body text-center">
+
+            <h5 class="card-title">
                 ${servicio}
-            </div>
+            </h5>
+
         </div>
-    `;
+
+    </div>
+
+</div>
+`;
 
 });
 
@@ -107,6 +118,18 @@ descripcion.addEventListener("blur", validarDescripcion);
 categoria.addEventListener("change", validarCategoria);
 categoria.addEventListener("blur", validarCategoria);
 
+function mostrarAlerta() {
+
+    alertaBootstrap.classList.remove("d-none");
+
+    setTimeout(() => {
+
+        alertaBootstrap.classList.add("d-none");
+
+    }, 3000);
+
+}
+
 formulario.addEventListener("submit", function(e) {
 
     e.preventDefault();
@@ -123,26 +146,29 @@ formulario.addEventListener("submit", function(e) {
         return;
         
     }
+    spinnerCarga.classList.remove("d-none");
 const nuevaActividad = {
     nombre: nombre.value,
     descripcion: descripcion.value,
     categoria: categoria.value
 };
+spinnerCarga.classList.add("d-none");
 
 actividades.push(nuevaActividad);
+mostrarAlerta();
 
-    const item = document.createElement("li");
+    const item = document.createElement("tr");
 
-    item.className =
-        "list-group-item d-flex justify-content-between align-items-center";
-
-    item.innerHTML =
-        `${nombre.value} - ${descripcion.value} (${categoria.value})`;
+item.innerHTML = `
+    <td>${nombre.value}</td>
+    <td>${descripcion.value}</td>
+    <td>${categoria.value}</td>
+    <td></td>
+`;
 
     const botonEliminar = document.createElement("button");
-
     botonEliminar.textContent = "Eliminar";
-    botonEliminar.className = "btn btn-danger btn-sm";
+botonEliminar.className = "btn btn-danger btn-sm";
 
     botonEliminar.addEventListener("click", function() {
 
@@ -160,7 +186,7 @@ actividades.push(nuevaActividad);
     }
 });
 
-    item.appendChild(botonEliminar);
+    item.lastElementChild.appendChild(botonEliminar);
 
     lista.appendChild(item);
 

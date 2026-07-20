@@ -1,10 +1,13 @@
 /* GENERAL */
-body {
-    background-color: #f4f6f9;
-    font-family: Arial, sans-serif;
-    margin: 0;
+body{
+    background:
+    linear-gradient(
+        135deg,
+        #020617,
+        #0f172a,
+        #1e3a8a
+    );
 }
-
 /* HEADER */
 header {
     background: linear-gradient(90deg, #4facfe, #00f2fe);
@@ -51,11 +54,26 @@ nav a:hover {
 }
 
 /* SECCIONES */
-section {
-    padding: 20px;
-    margin: 20px;
+section{
+    padding: 25px;
+    margin: 30px 0;
     background: white;
-    border-radius: 10px;
+    border-radius: 20px;
+    box-shadow: 0px 15px 35px rgba(0,0,0,.2);
+}
+section{
+    background:white;
+
+    border-radius:20px;
+
+    box-shadow:
+        0px 15px 35px rgba(0,0,0,.20);
+
+    transition:.3s;
+}
+
+section:hover {
+    transform: translateY(-5px);
 }
 
 /* QUIENES SOMOS IMAGEN */
@@ -134,10 +152,11 @@ aside {
 
 /* FOOTER */
 footer {
-    background-color: #2c3e50;
+    background: linear-gradient(90deg,#1e293b,#0f172a);
     color: white;
     text-align: center;
-    padding: 15px;
+    padding: 25px;
+    margin-top: 30px;
 }
 /* BOTÓN ENVIAR */
 button {
@@ -187,4 +206,205 @@ button:hover {
     }
     
 
+}
+.navbar {
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+}
+
+.navbar-brand {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.nav-link:hover {
+    color: #00f2fe !important;
+}
+.card-servicio{
+
+    background:
+    linear-gradient(
+        135deg,
+        #3b82f6,
+        #06b6d4
+    );
+
+    color:white;
+
+    border:none;
+
+    border-radius:20px;
+
+    box-shadow:
+        0px 10px 25px rgba(59,130,246,.35);
+
+    transition:.3s;
+}
+
+.card-servicio:hover{
+    transform: translateY(-8px);
+    box-shadow: 0px 10px 25px rgba(0,0,0,0.2);
+}
+
+.card-title{
+    color:white;
+    font-weight:bold;
+}
+img{
+
+    border-radius:20px;
+
+    box-shadow:
+    0px 15px 35px rgba(0,0,0,.25);
+
+    transition:.3s;
+}
+img:hover{
+    transform:scale(1.03);
+}
+form {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+}
+
+.form-control,
+.form-select {
+    border-radius: 10px;
+}
+.btn {
+    border-radius: 30px;
+    padding: 10px 25px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+}
+.table {
+    border-radius: 15px;
+    overflow: hidden;
+}
+.hero{
+    height: 60vh;
+
+    background-image: url("estudio.png");
+
+    background-size: cover;
+    background-position: center;
+
+    display: flex;
+    align-items: center;
+}
+.hero-overlay{
+    width: 100%;
+    color: white;
+}
+
+.hero h1{
+    font-size: 80px;
+    font-weight: 800;
+    color: white;
+
+    text-shadow:
+        0 0 10px rgba(0,0,0,.8),
+        0 0 20px rgba(0,0,0,.8),
+        0 0 30px rgba(0,0,0,.8);
+}
+
+.hero p{
+    color: white;
+    text-shadow:
+        0 0 10px rgba(0,0,0,.8);
+}
+.hero .btn{
+    background: #00c2ff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 30px;
+    font-size: 18px;
+    font-weight: bold;
+}
+.hero-overlay{
+    width: 100%;
+    text-align: center;
+}
+
+.hero .container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.navbar{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+h2{
+    color:#2563eb;
+    font-weight:700;
+}
+form{
+
+    background:#f8fafc;
+
+    border-radius:20px;
+
+    box-shadow:
+    inset 0px 2px 10px rgba(0,0,0,.08);
+}
+.navbar{
+    background: rgba(15,23,42,.85) !important;
+    backdrop-filter: blur(10px);
+}
+html{
+    scroll-behavior: smooth;
+}
+main{
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+#quienes{
+    padding: 40px;
+}
+#quienes h2{
+    margin-bottom: 20px;
+}
+.hero-btn{
+
+    margin-top: 25px;
+
+    padding: 15px 40px;
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+    border-radius: 40px;
+
+    background: linear-gradient(
+        135deg,
+        #f59e0b,
+        #facc15
+    );
+
+    border: none;
+
+    color: #111827;
+
+    box-shadow:
+        0 8px 20px rgba(245,158,11,.4);
+}
+
+.hero-btn:hover{
+
+    transform: translateY(-5px);
+
+    background: linear-gradient(
+        135deg,
+        #facc15,
+        #fde047
+    );
 }
