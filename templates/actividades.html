@@ -1,15 +1,77 @@
 {% extends "base.html" %}
 
 {% block content %}
+<main class="container mt-4">
+   
+    <!-- FORMULARIO -->
+<section class="card p-4 shadow-sm mb-4">
+    <h3 class="text-center">Registrar nueva actividad</h3>
+    <form method="POST" action="{{ url_for('actividades') }}">
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ form.nombre.label(class="form-label") }}
+                {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else "")) }}
+                {% for error in form.nombre.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                {{ form.descripcion.label(class="form-label") }}
+                {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), rows=2) }}
+                {% for error in form.descripcion.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                {{ form.categoria.label(class="form-label") }}
+                {{ form.categoria(class="form-select" + (" is-invalid" if form.categoria.errors else "")) }}
+                {% for error in form.categoria.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-primary btn-lg">Agregar actividad</button>
+        </div>
+    </form>
+</section>
 
-<div class="container mt-5">
-
-    <h2>Actividades Académicas</h2>
-
-    <p>
-        Aquí se gestionan las tareas, proyectos y exámenes de los estudiantes.
-    </p>
-
+ <!-- TABLA -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Categoría</th>
+                <th class="text-center" style="min-width: 150px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for act in lista_actividades %}
+            <tr>
+                <td>{{ act.nombre }}</td>
+                <td>{{ act.descripcion }}</td>
+                <td>{{ act.categoria }}</td>
+                <td class="text-center text-nowrap">
+                    <a href="{{ url_for('editar_actividad', id=act.id) }}" class="btn btn-sm btn-warning me-1">Editar</a>
+                    <form method="POST" action="{{ url_for('eliminar_actividad', id=act.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que deseas eliminar esta actividad?')">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">No hay actividades registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
+<!-- Total más visible -->
+<p class="text-center fw-bold fs-5 mt-2">
+    Total: <span class="text-dark">{{ lista_actividades|length }}</span>
+</p>
 {% endblock %}

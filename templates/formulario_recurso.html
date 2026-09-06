@@ -27,7 +27,7 @@
                     <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 {{ form.cantidad.label(class="form-label") }}
                 {{ form.cantidad(class="form-control" + (" is-invalid" if form.cantidad.errors else "")) }}
                 {% for error in form.cantidad.errors %}

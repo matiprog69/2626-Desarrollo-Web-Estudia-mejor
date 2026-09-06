@@ -1,15 +1,106 @@
 {% extends "base.html" %}
 
 {% block content %}
+<main class="container mt-4">
 
-<div class="container mt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-    <h2>Estudiantes</h2>
+    <h2 class="text-center mb-4">Gestión de Estudiantes</h2>
 
-    <p>
-        Información de estudiantes registrados en la plataforma.
-    </p>
+    <!-- FORMULARIO -->
+    <section class="card p-4 shadow-sm mb-4">
+        <h3 class="text-center">Registrar nuevo estudiante</h3>
+        <form method="POST" action="{{ url_for('estudiantes_lista') }}">
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form.nombre.label(class="form-label") }}
+                    {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else "")) }}
+                    {% for error in form.nombre.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-4">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                    {% for error in form.email.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-4">
+                    {{ form.telefono.label(class="form-label") }}
+                    {{ form.telefono(class="form-control" + (" is-invalid" if form.telefono.errors else "")) }}
+                    {% for error in form.telefono.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-4">
+                    {{ form.carrera.label(class="form-label") }}
+                    {{ form.carrera(class="form-select" + (" is-invalid" if form.carrera.errors else "")) }}
+                    {% for error in form.carrera.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-8">
+                    {{ form.direccion.label(class="form-label") }}
+                    {{ form.direccion(class="form-control" + (" is-invalid" if form.direccion.errors else ""), rows=2) }}
+                    {% for error in form.direccion.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <button type="submit" class="btn btn-primary btn-lg">Agregar estudiante</button>
+            </div>
+        </form>
+    </section>
 
-</div>
+    <!-- TABLA -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Carrera</th>
+                    <th>Dirección</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for est in lista_estudiantes %}
+                <tr>
+                    <td>{{ est.nombre }}</td>
+                    <td>{{ est.email }}</td>
+                    <td>{{ est.telefono or '-' }}</td>
+                    <td>{{ est.carrera }}</td>
+                    <td>{{ est.direccion or '-' }}</td>
+                    <td class="text-nowrap">
+                        <a href="{{ url_for('estudiante_editar', id=est.id) }}" class="btn btn-sm btn-warning me-1">Editar</a>
+                        <form method="POST" action="{{ url_for('estudiante_eliminar', id=est.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro?')">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay estudiantes registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="text-center fw-bold">Total: <span class="badge bg-primary">{{ lista_estudiantes|length }}</span></p>
+    </div>
 
+</main>
 {% endblock %}

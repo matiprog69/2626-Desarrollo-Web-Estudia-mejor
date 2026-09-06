@@ -7,11 +7,21 @@
 
         <div class="collapse navbar-collapse" id="menu">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('inicio') }}">Inicio</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('actividades') }}">Actividades</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('recursos') }}">Recursos</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('estudiantes') }}">Estudiantes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('rendimiento') }}">Rendimiento</a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('inicio') }}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('actividades') }}">Actividades</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('estudiantes_lista') }}">Estudiantes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('recursos_lista') }}">Recursos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('rendimiento_lista') }}">Rendimiento</a>
+                </li>
             </ul>
         </div>
     </div>

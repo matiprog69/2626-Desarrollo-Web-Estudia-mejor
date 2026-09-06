@@ -5,6 +5,18 @@
 <!-- CONTENIDO PRINCIPAL -->
 <main class="container">
 
+<!-- Mostrar mensajes flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <!-- INFORMACIÓN DEL SISTEMA -->
     <section class="container mt-4">
 
@@ -31,7 +43,7 @@
             </div>
         </div>
 
-        <!-- Actividades -->
+        <!-- Actividades disponibles (sección original) -->
         <div class="card shadow-sm">
 
             <div class="card-body">
@@ -116,8 +128,8 @@
         </div>
 
         <div class="col-md-6">
-    <img src="{{ url_for('static', filename='img/estudio.png') }}" alt="Estudio" class="img-fluid">
-</div>
+            <img src="{{ url_for('static', filename='img/estudio.png') }}" alt="Estudio" class="img-fluid">
+        </div>
 
     </section>
 
@@ -127,7 +139,7 @@
         <h2 class="text-center mb-4">Servicios</h2>
 
         <div class="row" id="contenedorServicios">
-
+            <!-- Aquí puedes agregar servicios dinámicamente o dejarlo fijo -->
         </div>
 
     </section>
@@ -144,141 +156,41 @@
         </article>
 
     </section>
-
-    <!-- FORMULARIO -->
-    <section id="formulario" class="container p-4">
-
-        <h2 class="text-center">
-            Registro de actividades
-        </h2>
-
-        <form class="row">
-
-            <div class="col-md-4 mb-3">
-
-                <label for="nombre" class="form-label">
-                    Nombre de la actividad
-                </label>
-
-                <input
-                    type="text"
-                    id="nombre"
-                    class="form-control"
-                    placeholder="Ingrese el nombre">
-
-                <div id="errorNombre"></div>
-
-            </div>
-
-            <div class="col-12 mb-3">
-
-                <label for="descripcion" class="form-label">
-                    Descripción
-                </label>
-
-                <input
-                    type="text"
-                    id="descripcion"
-                    class="form-control"
-                    placeholder="Ingrese una descripción">
-
-                <div id="errorDescripcion"></div>
-
-            </div>
-
-            <div class="col-12 mb-3">
-
-                <label for="categoria" class="form-label">
-                    Categoría
-                </label>
-
-                <select id="categoria" class="form-select">
-
-                    <option value="">Selecciona una categoría</option>
-                    <option value="Estudio">Estudio</option>
-                    <option value="Tarea">Tarea</option>
-                    <option value="Examen">Examen</option>
-                    <option value="Proyecto">Proyecto</option>
-                    <option value="Otro">Otro</option>
-
-                </select>
-
-                <div id="errorCategoria"></div>
-
-            </div>
-
-            <div
-                id="alertaBootstrap"
-                class="alert alert-success d-none mt-3"
-                role="alert">
-
-                Actividad registrada correctamente.
-
-            </div>
-
-            <div class="text-center">
-
-                <button class="btn btn-primary">
-                    Agregar
-                </button>
-
-            </div>
-
-            <div class="text-center mt-3">
-
-                <div
-                    id="spinnerCarga"
-                    class="spinner-border text-primary d-none"
-                    role="status">
-
-                    <span class="visually-hidden">
-                        Cargando...
-                    </span>
-
-                </div>
-
-            </div>
-
-        </form>
-
-        <div id="mensaje" class="text-center mt-3"></div>
-
-        <div class="table-responsive mt-3">
-
+        <!-- TABLA DINÁMICA DE ACTIVIDADES (desde la lista en memoria) -->
+        <div class="table-responsive mt-4">
             <table class="table table-striped table-hover table-bordered">
-
                 <thead class="table-dark">
-
                     <tr>
                         <th>Nombre</th>
                         <th>Descripción</th>
                         <th>Categoría</th>
                         <th>Acciones</th>
                     </tr>
-
                 </thead>
-
-                <tbody id="lista">
-
+                <tbody>
+                    {% for act in lista_actividades %}
+                    <tr>
+                        <td>{{ act.nombre }}</td>
+                        <td>{{ act.descripcion }}</td>
+                        <td>{{ act.categoria }}</td>
+                        <td>
+                            <a href="{{ url_for('editar_actividad', id=act.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                            <form method="POST" action="{{ url_for('eliminar_actividad', id=act.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que deseas eliminar esta actividad?')">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No hay actividades registradas.</td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
-
             </table>
-
+            <p class="text-center mt-2">Total: <span id="total">{{ lista_actividades|length }}</span></p>
         </div>
 
-        <p class="text-center mt-2">
-            Total: <span id="total">0</span>
-        </p>
-
- <div class="text-center mt-3">
-
-    <button type="button" class="btn btn-info">
-        Alguna acción
-    </button>
-
-</div>
-
-</section>
+    </section>
 
 </main>
 
