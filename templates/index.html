@@ -5,6 +5,92 @@
 <!-- CONTENIDO PRINCIPAL -->
 <main class="container">
 
+<!-- INFORMACIÓN DEL SISTEMA -->
+    <section class="container mt-4">
+
+        <div class="alert alert-info text-center">
+            {{ mensaje }}
+        </div>
+
+        <!-- Datos del estudiante -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center">
+
+                <h3>Información del estudiante</h3>
+
+                <p>
+                    <strong>Nombre:</strong>
+                    {{ estudiante.nombre|upper }}
+                </p>
+
+                <p>
+                    <strong>Carrera:</strong>
+                    {{ estudiante.carrera }}
+                </p>
+
+            </div>
+        </div>
+
+        <!-- Actividades -->
+        <div class="card shadow-sm">
+
+            <div class="card-body">
+
+                <h3 class="text-center mb-3">
+                    Actividades disponibles
+                </h3>
+
+                <div class="row">
+
+                    {% for actividad in actividades %}
+
+                    <div class="col-md-4 mb-3">
+
+                        <div class="card h-100">
+
+                            <div class="card-body">
+
+                                <h5 class="card-title">
+                                    {{ actividad.nombre }}
+                                </h5>
+
+                                {% if actividad.estado %}
+
+                                    <span class="badge bg-success">
+                                        Disponible
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-danger">
+                                        Agotado
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% else %}
+
+                    <div class="col-12">
+                        <p class="text-center">
+                            No hay actividades registradas.
+                        </p>
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
     <!-- INICIO -->
     <section id="inicio" class="text-center p-3">
         <h2>Inicio</h2>
@@ -184,9 +270,16 @@
             Total: <span id="total">0</span>
         </p>
 
-        <div class="text-center mt-3">
+ <div class="text-center mt-3">
 
-            <button type="button" class="btn btn-info">
-    Alguna acción
-</button>
+    <button type="button" class="btn btn-info">
+        Alguna acción
+    </button>
+
+</div>
+
+</section>
+
+</main>
+
 {% endblock %}
