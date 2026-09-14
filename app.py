@@ -1,76 +1,12 @@
 import os
 from flask import Flask, render_template, redirect, url_for, flash, request
-import sqlite3
-
-# ------------------ CONFIGURACIÓN DE BASE DE DATOS ------------------
-DATABASE = os.path.join(os.path.dirname(__file__), 'data', 'estudia_mejor.db')
-
-def get_db_connection():
-    """Establece conexión con SQLite y permite acceder a las columnas por nombre."""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    """Crea todas las tablas si no existen."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Tabla de actividades
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS actividades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            descripcion TEXT NOT NULL,
-            categoria TEXT NOT NULL
-        )
-    ''')
-    
-    # Tabla de estudiantes
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS estudiantes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            telefono TEXT,
-            carrera TEXT NOT NULL,
-            direccion TEXT
-        )
-    ''')
-    
-    # Tabla de recursos
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS recursos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            tipo TEXT NOT NULL,
-            descripcion TEXT,
-            cantidad INTEGER NOT NULL
-        )
-    ''')
-    
-    # Tabla de rendimiento
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS rendimiento (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            estudiante TEXT NOT NULL,
-            asignatura TEXT NOT NULL,
-            nota REAL NOT NULL,
-            fecha DATE NOT NULL,
-            observaciones TEXT
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
-    print("✅ Base de datos inicializada con todas las tablas.")
+from conexion.conexion import get_connection
+import psycopg2.extras
+import psycopg2
 
 # ------------------ APLICACIÓN FLASK ------------------
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'clave-secreta-para-desarrollo'
-
-# Inicializar la base de datos al arrancar la app
-init_db()
 
 # ------------------ IMPORTAR FORMULARIOS ------------------
 from forms.actividad_form import ActividadForm
@@ -97,179 +33,281 @@ def inicio():
         actividades=actividades_disponibles
     )
 
-# ------------------ MÓDULO ACTIVIDADES ------------------
+# ------------------ MÓDULO ACTIVIDADES (CON JOIN Y FOREIGN KEY) ------------------
 @app.route('/actividades', methods=['GET', 'POST'])
 def actividades():
     form = ActividadForm()
-    if form.validate_on_submit():
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO actividades (nombre, descripcion, categoria)
-            VALUES (?, ?, ?)
-        ''', (form.nombre.data, form.descripcion.data, form.categoria.data))
-        conn.commit()
+    
+    # REQUISITO: Cargar los estudiantes para el SelectField (Foreign Key)
+    conn = get_connection()
+    if conn:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT id, nombre FROM estudiantes ORDER BY nombre')
+        estudiantes_db = cursor.fetchall()
+        cursor.close()
         conn.close()
-        flash('Actividad agregada correctamente', 'success')
+        # Asignar opciones al formulario: [(id, nombre), ...]
+        form.estudiante_id.choices = [(e['id'], e['nombre']) for e in estudiantes_db]
+
+    if form.validate_on_submit():
+        conn = get_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                # REQUISITO: INSERT con %s (parametrizado)
+                cursor.execute('''
+                    INSERT INTO actividades (nombre, descripcion, categoria, estudiante_id)
+                    VALUES (%s, %s, %s, %s)
+                ''', (form.nombre.data, form.descripcion.data, form.categoria.data, form.estudiante_id.data))
+                conn.commit() # REQUISITO: commit
+                flash('Actividad agregada correctamente', 'success')
+            except Exception as e:
+                conn.rollback()
+                flash(f'Error al agregar: {e}', 'danger')
+            finally:
+                cursor.close()
+                conn.close()
         return redirect(url_for('actividades'))
     
-    conn = get_db_connection()
-    lista_actividades = conn.execute('SELECT * FROM actividades ORDER BY id DESC').fetchall()
-    conn.close()
+    conn = get_connection()
+    lista_actividades = []
+    if conn:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        # REQUISITO: JOIN entre dos tablas
+        cursor.execute('''
+            SELECT a.id, a.nombre, a.descripcion, a.categoria, e.nombre as estudiante_nombre
+            FROM actividades a
+            LEFT JOIN estudiantes e ON a.estudiante_id = e.id
+            ORDER BY a.id DESC
+        ''')
+        lista_actividades = cursor.fetchall() # REQUISITO: fetchall()
+        cursor.close()
+        conn.close()
     return render_template('actividades.html', form=form, lista_actividades=lista_actividades)
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar_actividad(id):
-    conn = get_db_connection()
-    actividad = conn.execute('SELECT * FROM actividades WHERE id = ?', (id,)).fetchone()
+    conn = get_connection()
+    if not conn: return "Error de conexión"
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute('SELECT * FROM actividades WHERE id = %s', (id,))
+    actividad = cursor.fetchone()
+    
     if not actividad:
         flash('Actividad no encontrada', 'danger')
+        cursor.close()
         conn.close()
         return redirect(url_for('actividades'))
     
     form = ActividadForm(data=dict(actividad))
+    
+    # REQUISITO: Cargar los estudiantes para el SelectField en edición
+    cursor.execute('SELECT id, nombre FROM estudiantes ORDER BY nombre')
+    estudiantes_db = cursor.fetchall()
+    form.estudiante_id.choices = [(e['id'], e['nombre']) for e in estudiantes_db]
+
     if form.validate_on_submit():
-        conn.execute('''
-            UPDATE actividades
-            SET nombre = ?, descripcion = ?, categoria = ?
-            WHERE id = ?
-        ''', (form.nombre.data, form.descripcion.data, form.categoria.data, id))
-        conn.commit()
-        conn.close()
-        flash('Actividad actualizada', 'success')
+        try:
+            cursor.execute('''
+                UPDATE actividades
+                SET nombre = %s, descripcion = %s, categoria = %s, estudiante_id = %s
+                WHERE id = %s
+            ''', (form.nombre.data, form.descripcion.data, form.categoria.data, form.estudiante_id.data, id))
+            conn.commit()
+            flash('Actividad actualizada', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error al actualizar: {e}', 'danger')
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('actividades'))
+    
+    cursor.close()
     conn.close()
     return render_template('formulario_actividad.html', form=form, accion='Editar')
 
 @app.route('/eliminar/<int:id>', methods=['POST'])
 def eliminar_actividad(id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM actividades WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    flash('Actividad eliminada', 'info')
+    conn = get_connection()
+    if conn:
+        cursor = conn.cursor()
+        # REQUISITO: DELETE con WHERE
+        cursor.execute('DELETE FROM actividades WHERE id = %s', (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Actividad eliminada', 'info')
     return redirect(url_for('actividades'))
 
-# ------------------ MÓDULO ESTUDIANTES (COMPLETO) ------------------
-
+# ------------------ MÓDULO ESTUDIANTES ------------------
 @app.route('/estudiantes', methods=['GET', 'POST'])
 def estudiantes_lista():
     form = EstudianteForm()
     if form.validate_on_submit():
-        conn = get_db_connection()
-        try:
-            conn.execute('''
-                INSERT INTO estudiantes (nombre, email, telefono, carrera, direccion)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (form.nombre.data, form.email.data, form.telefono.data,
-                  form.carrera.data, form.direccion.data))
-            conn.commit()
-            flash('Estudiante agregado correctamente', 'success')
-        except sqlite3.IntegrityError as e:
-            flash(f'Error: El correo ya está registrado o hay un problema de integridad: {e}', 'danger')
-        except Exception as e:
-            flash(f'Error inesperado: {e}', 'danger')
-        finally:
-            conn.close()
+        conn = get_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO estudiantes (nombre, email, telefono, carrera, direccion)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (form.nombre.data, form.email.data, form.telefono.data,
+                      form.carrera.data, form.direccion.data))
+                conn.commit()
+                flash('Estudiante agregado correctamente', 'success')
+            except psycopg2.IntegrityError:
+                conn.rollback()
+                flash('Error: El correo ya está registrado.', 'danger')
+            except Exception as e:
+                conn.rollback()
+                flash(f'Error inesperado: {e}', 'danger')
+            finally:
+                cursor.close()
+                conn.close()
         return redirect(url_for('estudiantes_lista'))
     
-    conn = get_db_connection()
-    lista_estudiantes = conn.execute('SELECT * FROM estudiantes ORDER BY id DESC').fetchall()
-    conn.close()
+    conn = get_connection()
+    lista_estudiantes = []
+    if conn:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM estudiantes ORDER BY id DESC')
+        lista_estudiantes = cursor.fetchall()
+        cursor.close()
+        conn.close()
     return render_template('estudiantes.html', form=form, lista_estudiantes=lista_estudiantes)
-
 
 @app.route('/estudiantes/editar/<int:id>', methods=['GET', 'POST'])
 def estudiante_editar(id):
-    conn = get_db_connection()
-    estudiante = conn.execute('SELECT * FROM estudiantes WHERE id = ?', (id,)).fetchone()
+    conn = get_connection()
+    if not conn: return "Error de conexión"
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute('SELECT * FROM estudiantes WHERE id = %s', (id,))
+    estudiante = cursor.fetchone()
     
     if not estudiante:
         flash('Estudiante no encontrado', 'danger')
+        cursor.close()
         conn.close()
         return redirect(url_for('estudiantes_lista'))
     
     form = EstudianteForm(data=dict(estudiante))
-    
     if form.validate_on_submit():
         try:
-            conn.execute('''
+            cursor.execute('''
                 UPDATE estudiantes
-                SET nombre = ?, email = ?, telefono = ?, carrera = ?, direccion = ?
-                WHERE id = ?
+                SET nombre = %s, email = %s, telefono = %s, carrera = %s, direccion = %s
+                WHERE id = %s
             ''', (form.nombre.data, form.email.data, form.telefono.data,
                   form.carrera.data, form.direccion.data, id))
             conn.commit()
             flash('Estudiante actualizado correctamente', 'success')
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
+            conn.rollback()
             flash('El correo electrónico ya está en uso por otro estudiante', 'danger')
         except Exception as e:
+            conn.rollback()
             flash(f'Error inesperado: {e}', 'danger')
         finally:
+            cursor.close()
             conn.close()
         return redirect(url_for('estudiantes_lista'))
     
+    cursor.close()
     conn.close()
     return render_template('formulario_estudiante.html', form=form, accion='Editar')
 
-
 @app.route('/estudiantes/eliminar/<int:id>', methods=['POST'])
 def estudiante_eliminar(id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM estudiantes WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    flash('Estudiante eliminado correctamente', 'info')
+    conn = get_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM estudiantes WHERE id = %s', (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Estudiante eliminado correctamente', 'info')
     return redirect(url_for('estudiantes_lista'))
+
 # ------------------ MÓDULO RECURSOS ------------------
 @app.route('/recursos', methods=['GET', 'POST'])
 def recursos_lista():
     form = RecursoForm()
     if form.validate_on_submit():
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO recursos (nombre, tipo, descripcion, cantidad)
-            VALUES (?, ?, ?, ?)
-        ''', (form.nombre.data, form.tipo.data, form.descripcion.data, form.cantidad.data))
-        conn.commit()
-        conn.close()
-        flash('Recurso agregado correctamente', 'success')
+        conn = get_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO recursos (nombre, tipo, descripcion, cantidad)
+                    VALUES (%s, %s, %s, %s)
+                ''', (form.nombre.data, form.tipo.data, form.descripcion.data, form.cantidad.data))
+                conn.commit()
+                flash('Recurso agregado correctamente', 'success')
+            except Exception as e:
+                conn.rollback()
+                flash(f'Error: {e}', 'danger')
+            finally:
+                cursor.close()
+                conn.close()
         return redirect(url_for('recursos_lista'))
     
-    conn = get_db_connection()
-    lista_recursos = conn.execute('SELECT * FROM recursos ORDER BY id DESC').fetchall()
-    conn.close()
+    conn = get_connection()
+    lista_recursos = []
+    if conn:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM recursos ORDER BY id DESC')
+        lista_recursos = cursor.fetchall()
+        cursor.close()
+        conn.close()
     return render_template('recursos.html', form=form, lista_recursos=lista_recursos)
 
 @app.route('/recursos/editar/<int:id>', methods=['GET', 'POST'])
 def recurso_editar(id):
-    conn = get_db_connection()
-    recurso = conn.execute('SELECT * FROM recursos WHERE id = ?', (id,)).fetchone()
+    conn = get_connection()
+    if not conn: return "Error"
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute('SELECT * FROM recursos WHERE id = %s', (id,))
+    recurso = cursor.fetchone()
+    
     if not recurso:
         flash('Recurso no encontrado', 'danger')
+        cursor.close()
         conn.close()
         return redirect(url_for('recursos_lista'))
     
     form = RecursoForm(data=dict(recurso))
     if form.validate_on_submit():
-        conn.execute('''
-            UPDATE recursos
-            SET nombre = ?, tipo = ?, descripcion = ?, cantidad = ?
-            WHERE id = ?
-        ''', (form.nombre.data, form.tipo.data, form.descripcion.data, form.cantidad.data, id))
-        conn.commit()
-        conn.close()
-        flash('Recurso actualizado', 'success')
+        try:
+            cursor.execute('''
+                UPDATE recursos
+                SET nombre = %s, tipo = %s, descripcion = %s, cantidad = %s
+                WHERE id = %s
+            ''', (form.nombre.data, form.tipo.data, form.descripcion.data, form.cantidad.data, id))
+            conn.commit()
+            flash('Recurso actualizado', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error: {e}', 'danger')
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('recursos_lista'))
+    
+    cursor.close()
     conn.close()
     return render_template('formulario_recurso.html', form=form, accion='Editar')
 
 @app.route('/recursos/eliminar/<int:id>', methods=['POST'])
 def recurso_eliminar(id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM recursos WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    flash('Recurso eliminado', 'info')
+    conn = get_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM recursos WHERE id = %s', (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Recurso eliminado', 'info')
     return redirect(url_for('recursos_lista'))
 
 # ------------------ MÓDULO RENDIMIENTO ------------------
@@ -277,53 +315,82 @@ def recurso_eliminar(id):
 def rendimiento_lista():
     form = RendimientoForm()
     if form.validate_on_submit():
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO rendimiento (estudiante, asignatura, nota, fecha, observaciones)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (form.estudiante.data, form.asignatura.data, form.nota.data,
-              form.fecha.data, form.observaciones.data))
-        conn.commit()
-        conn.close()
-        flash('Registro de rendimiento agregado', 'success')
+        conn = get_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO rendimiento (estudiante, asignatura, nota, fecha, observaciones)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (form.estudiante.data, form.asignatura.data, form.nota.data,
+                      form.fecha.data, form.observaciones.data))
+                conn.commit()
+                flash('Registro de rendimiento agregado', 'success')
+            except Exception as e:
+                conn.rollback()
+                flash(f'Error: {e}', 'danger')
+            finally:
+                cursor.close()
+                conn.close()
         return redirect(url_for('rendimiento_lista'))
     
-    conn = get_db_connection()
-    lista_rendimientos = conn.execute('SELECT * FROM rendimiento ORDER BY id DESC').fetchall()
-    conn.close()
+    conn = get_connection()
+    lista_rendimientos = []
+    if conn:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM rendimiento ORDER BY id DESC')
+        lista_rendimientos = cursor.fetchall()
+        cursor.close()
+        conn.close()
     return render_template('rendimiento.html', form=form, lista_rendimientos=lista_rendimientos)
 
 @app.route('/rendimiento/editar/<int:id>', methods=['GET', 'POST'])
 def rendimiento_editar(id):
-    conn = get_db_connection()
-    rend = conn.execute('SELECT * FROM rendimiento WHERE id = ?', (id,)).fetchone()
+    conn = get_connection()
+    if not conn: return "Error"
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute('SELECT * FROM rendimiento WHERE id = %s', (id,))
+    rend = cursor.fetchone()
+    
     if not rend:
         flash('Registro no encontrado', 'danger')
+        cursor.close()
         conn.close()
         return redirect(url_for('rendimiento_lista'))
     
     form = RendimientoForm(data=dict(rend))
     if form.validate_on_submit():
-        conn.execute('''
-            UPDATE rendimiento
-            SET estudiante = ?, asignatura = ?, nota = ?, fecha = ?, observaciones = ?
-            WHERE id = ?
-        ''', (form.estudiante.data, form.asignatura.data, form.nota.data,
-              form.fecha.data, form.observaciones.data, id))
-        conn.commit()
-        conn.close()
-        flash('Registro actualizado', 'success')
+        try:
+            cursor.execute('''
+                UPDATE rendimiento
+                SET estudiante = %s, asignatura = %s, nota = %s, fecha = %s, observaciones = %s
+                WHERE id = %s
+            ''', (form.estudiante.data, form.asignatura.data, form.nota.data,
+                  form.fecha.data, form.observaciones.data, id))
+            conn.commit()
+            flash('Registro actualizado', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error: {e}', 'danger')
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('rendimiento_lista'))
+    
+    cursor.close()
     conn.close()
     return render_template('formulario_rendimiento.html', form=form, accion='Editar')
 
 @app.route('/rendimiento/eliminar/<int:id>', methods=['POST'])
 def rendimiento_eliminar(id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM rendimiento WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    flash('Registro eliminado', 'info')
+    conn = get_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM rendimiento WHERE id = %s', (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Registro eliminado', 'info')
     return redirect(url_for('rendimiento_lista'))
 
 # ------------------ EJECUCIÓN ------------------

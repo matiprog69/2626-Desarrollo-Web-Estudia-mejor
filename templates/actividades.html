@@ -30,6 +30,16 @@
                     <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
+            
+            <!-- NUEVO CAMPO: ESTUDIANTE ASIGNADO -->
+            <div class="col-md-12">
+                {{ form.estudiante_id.label(class="form-label") }}
+                {{ form.estudiante_id(class="form-select" + (" is-invalid" if form.estudiante_id.errors else "")) }}
+                {% for error in form.estudiante_id.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+
         </div>
         <div class="text-center mt-3">
             <button type="submit" class="btn btn-primary btn-lg">Agregar actividad</button>
@@ -45,6 +55,7 @@
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Categoría</th>
+                <th>Estudiante</th> <!-- NUEVA COLUMNA -->
                 <th class="text-center" style="min-width: 150px;">Acciones</th>
             </tr>
         </thead>
@@ -54,6 +65,8 @@
                 <td>{{ act.nombre }}</td>
                 <td>{{ act.descripcion }}</td>
                 <td>{{ act.categoria }}</td>
+                <!-- NUEVO DATO: Nombre del estudiante del JOIN -->
+                <td>{{ act.estudiante_nombre or 'Sin asignar' }}</td> 
                 <td class="text-center text-nowrap">
                     <a href="{{ url_for('editar_actividad', id=act.id) }}" class="btn btn-sm btn-warning me-1">Editar</a>
                     <form method="POST" action="{{ url_for('eliminar_actividad', id=act.id) }}" style="display:inline;">
@@ -63,7 +76,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="4" class="text-center">No hay actividades registradas.</td>
+                <td colspan="5" class="text-center">No hay actividades registradas.</td> <!-- Colspan actualizado a 5 -->
             </tr>
             {% endfor %}
         </tbody>

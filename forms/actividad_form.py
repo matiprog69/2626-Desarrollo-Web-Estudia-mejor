@@ -21,3 +21,9 @@ class ActividadForm(FlaskForm):
     ], validators=[
         DataRequired(message='Debes seleccionar una categoría')
     ])
+    
+    # NUEVO CAMPO: Relación con la tabla estudiantes
+    # El coerce=int es vital para que el id se envíe como número
+    estudiante_id = SelectField('Estudiante Asignado', coerce=int, validators=[
+        DataRequired(message='Debes seleccionar un estudiante')
+    ])

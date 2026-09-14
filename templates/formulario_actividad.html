@@ -26,6 +26,16 @@
                 <div class="invalid-feedback">{{ error }}</div>
             {% endfor %}
         </div>
+        
+        <!-- NUEVO CAMPO DE ESTUDIANTE -->
+        <div class="mb-3">
+            {{ form.estudiante_id.label(class="form-label") }}
+            {{ form.estudiante_id(class="form-select" + (" is-invalid" if form.estudiante_id.errors else "")) }}
+            {% for error in form.estudiante_id.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
         <a href="{{ url_for('inicio') }}" class="btn btn-secondary">Cancelar</a>
     </form>
