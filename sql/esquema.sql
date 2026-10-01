@@ -73,3 +73,118 @@ SELECT * FROM estudiantes;
 SELECT * FROM actividades;
 SELECT * FROM recursos;
 SELECT * FROM rendimiento;
+
+
+-- ============================================================
+-- SEMANA 15: Módulos de Servicios, Productos y Facturación
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- Tabla: servicios (Categorías de servicios académicos)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS servicios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    icono VARCHAR(50),
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- ------------------------------------------------------------
+-- Tabla: productos (Items con precio dentro de cada servicio)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS productos (
+    id SERIAL PRIMARY KEY,
+    servicio_id INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    precio NUMERIC(10, 2) NOT NULL,
+    duracion VARCHAR(50),
+    modalidad VARCHAR(50),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_servicio_producto
+        FOREIGN KEY (servicio_id) 
+        REFERENCES servicios(id) 
+        ON DELETE CASCADE
+);
+
+-- ------------------------------------------------------------
+-- Tabla: facturas (Cabecera de facturación)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS facturas (
+    id SERIAL PRIMARY KEY,
+    estudiante_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    fecha_emision TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total NUMERIC(10, 2) NOT NULL,
+    tipo_pago VARCHAR(20) NOT NULL,
+    num_cuotas INT NOT NULL DEFAULT 1,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    fecha_pagada TIMESTAMP,
+    CONSTRAINT fk_estudiante_factura
+        FOREIGN KEY (estudiante_id) 
+        REFERENCES estudiantes(id) 
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_usuario_factura
+        FOREIGN KEY (usuario_id) 
+        REFERENCES usuarios(id) 
+        ON DELETE RESTRICT
+);
+
+-- ------------------------------------------------------------
+-- Tabla: detalle_factura (Productos dentro de cada factura)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS detalle_factura (
+    id SERIAL PRIMARY KEY,
+    factura_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL DEFAULT 1,
+    precio_unitario NUMERIC(10, 2) NOT NULL,
+    subtotal NUMERIC(10, 2) NOT NULL,
+    CONSTRAINT fk_factura
+        FOREIGN KEY (factura_id) 
+        REFERENCES facturas(id) 
+        ON DELETE CASCADE,
+    CONSTRAINT fk_producto
+        FOREIGN KEY (producto_id) 
+        REFERENCES productos(id) 
+        ON DELETE RESTRICT
+);
+
+-- ------------------------------------------------------------
+-- Tabla: pagos (Cuotas de cada factura)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pagos (
+    id SERIAL PRIMARY KEY,
+    factura_id INT NOT NULL,
+    numero_cuota INT NOT NULL,
+    monto NUMERIC(10, 2) NOT NULL,
+    fecha_vencimiento DATE NOT NULL,
+    fecha_pago TIMESTAMP,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    CONSTRAINT fk_factura_pago
+        FOREIGN KEY (factura_id) 
+        REFERENCES facturas(id) 
+        ON DELETE CASCADE
+);
+
+-- ============================================================
+-- DATOS DE EJEMPLO (Opcional)
+-- ============================================================
+
+INSERT INTO servicios (nombre, descripcion, icono) VALUES
+('Guías de estudio', 'Material didáctico y guías de apoyo académico', 'book'),
+('Planificación de tareas', 'Herramientas para organizar tu tiempo y actividades', 'calendar'),
+('Consejos de productividad', 'Recursos para mejorar tu rendimiento académico', 'lightbulb'),
+('Herramientas digitales', 'Aplicaciones y licencias para estudiantes', 'laptop')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO productos (servicio_id, nombre, descripcion, precio, duracion, modalidad) VALUES
+(1, 'Guía de Cálculo Diferencial', 'Guía completa con ejercicios resueltos y práctica.', 15.00, 'PDF digital', 'Online'),
+(1, 'Guía de Física Mecánica', 'Resumen teórico y problemas tipo examen.', 12.00, 'PDF digital', 'Online'),
+(1, 'Guía de Programación Python', 'Desde variables hasta funciones, con proyectos.', 18.00, 'PDF digital', 'Online'),
+(2, 'Asesoría de organización semanal', 'Sesión 1 a 1 para organizar tu semana académica.', 10.00, '1 hora', 'Presencial'),
+(2, 'Plantilla de planificación académica', 'Plantilla editable de Excel/Notion.', 5.00, 'Descarga', 'Online'),
+(3, 'Curso: Técnicas de estudio efectivas', 'Aprende técnicas como Pomodoro, Feynman y más.', 25.00, '4 semanas', 'Online'),
+(4, 'Acceso a Notion Pro (1 mes)', 'Licencia premium de Notion para estudiantes.', 8.00, '1 mes', 'Online'),
+(4, 'Licencia Anki (estudiantes)', 'Herramienta de repetición espaciada para memorizar.', 12.00, 'Anual', 'Online');
