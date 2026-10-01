@@ -1,13 +1,21 @@
 from flask_wtf import FlaskForm
+
 from wtforms import (
     StringField,
     TextAreaField,
     DecimalField,
     SelectField,
     BooleanField,
+    IntegerField,
     SubmitField
 )
-from wtforms.validators import DataRequired, Length, NumberRange, Optional
+
+from wtforms.validators import (
+    DataRequired,
+    Length,
+    NumberRange,
+    Optional
+)
 
 
 class ProductoForm(FlaskForm):
@@ -44,13 +52,16 @@ class ProductoForm(FlaskForm):
         ]
     )
 
-    duracion = StringField(
-        'Duración (opcional)',
-        validators=[
-            Optional(),
-            Length(max=50, message='La duración no puede exceder los 50 caracteres.')
-        ]
-    )
+    stock = IntegerField(
+    'Stock',
+    validators=[
+        DataRequired(message='El stock es obligatorio.'),
+        NumberRange(
+            min=0,
+            message='El stock no puede ser negativo.'
+        )
+    ]
+)
 
     modalidad = StringField(
         'Modalidad (opcional)',

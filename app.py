@@ -817,7 +817,7 @@ def servicios_publico():
 
         for s in servicios:
             cursor.execute('''
-                SELECT id, nombre, descripcion, precio, duracion, modalidad, imagen
+                SELECT id, nombre, descripcion, precio, stock, modalidad, imagen
                 FROM productos
                 WHERE servicio_id = %s AND activo = TRUE
                 ORDER BY id
@@ -977,14 +977,14 @@ def nuevo_producto():
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO productos
-                        (servicio_id, nombre, descripcion, precio, duracion, modalidad, imagen, activo)
+                        (servicio_id, nombre, descripcion, precio, stock, modalidad, imagen, activo)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ''', (
                     form.servicio_id.data,
                     form.nombre.data,
                     form.descripcion.data,
                     form.precio.data,
-                    form.duracion.data,
+                    form.stock.data,
                     form.modalidad.data,
                     form.imagen.data,
                     form.activo.data
@@ -1029,7 +1029,7 @@ def editar_producto(id):
             cursor.execute('''
                 UPDATE productos
                 SET servicio_id = %s, nombre = %s, descripcion = %s,
-                    precio = %s, duracion = %s, modalidad = %s,
+                    precio = %s, stock = %s, modalidad = %s,
                     imagen = %s, activo = %s
                 WHERE id = %s
             ''', (
@@ -1037,7 +1037,7 @@ def editar_producto(id):
                 form.nombre.data,
                 form.descripcion.data,
                 form.precio.data,
-                form.duracion.data,
+                form.stock.data,
                 form.modalidad.data,
                 form.imagen.data,
                 form.activo.data,
@@ -1142,99 +1142,289 @@ def nueva_factura():
     """Formulario para emitir una nueva factura."""
     form = FacturaForm()
 
-    # Cargar estudiantes para el SelectField
+    # ============================================================
+    # CARGAR ESTUDIANTES PARA EL SELECTFIELD
+    # ============================================================
     conn = get_connection()
+
     if conn:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT id, nombre FROM estudiantes ORDER BY nombre')
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
+        cursor.execute('''
+            SELECT id, nombre
+            FROM estudiantes
+            ORDER BY nombre
+        ''')
+
         estudiantes_db = cursor.fetchall()
+
         cursor.close()
         conn.close()
-        form.estudiante_id.choices = [(e['id'], e['nombre']) for e in estudiantes_db]
 
-    # Cargar servicios y sus productos (para el carrito)
+        form.estudiante_id.choices = [
+            (e['id'], e['nombre'])
+            for e in estudiantes_db
+        ]
+
+    # ============================================================
+    # CARGAR SERVICIOS Y PRODUCTOS DISPONIBLES
+    # ============================================================
     conn = get_connection()
     servicios = []
+
     if conn:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
         cursor.execute('''
-            SELECT id, nombre FROM servicios WHERE activo = TRUE ORDER BY id
+            SELECT id, nombre
+            FROM servicios
+            WHERE activo = TRUE
+            ORDER BY id
         ''')
+
         servicios = cursor.fetchall()
 
         for s in servicios:
+
             cursor.execute('''
-                SELECT id, nombre, precio
+                SELECT
+                    id,
+                    nombre,
+                    precio,
+                    stock
                 FROM productos
-                WHERE servicio_id = %s AND activo = TRUE
+                WHERE servicio_id = %s
+                  AND activo = TRUE
+                  AND stock > 0
                 ORDER BY id
             ''', (s['id'],))
+
             s['productos'] = cursor.fetchall()
 
         cursor.close()
         conn.close()
 
+    # ============================================================
+    # PROCESAR FORMULARIO
+    # ============================================================
     if form.validate_on_submit():
-        # Leer productos enviados: "id|cantidad"
+
+        # Los productos vienen como:
+        # producto_id|cantidad
         productos_raw = request.form.getlist('productos[]')
 
         if not productos_raw:
-            flash('Debes agregar al menos un producto a la factura.', 'danger')
-            return render_template('nueva_factura.html', form=form, servicios=servicios)
+            flash(
+                'Debes agregar al menos un producto a la factura.',
+                'danger'
+            )
 
-        # Parsear productos
+            return render_template(
+                'nueva_factura.html',
+                form=form,
+                servicios=servicios
+            )
+
+        # ========================================================
+        # CONVERTIR PRODUCTOS RECIBIDOS
+        # ========================================================
         productos_parseados = []
+
         for item in productos_raw:
+
             try:
                 prod_id, cant = item.split('|')
-                productos_parseados.append((int(prod_id), int(cant)))
+
+                productos_parseados.append(
+                    (int(prod_id), int(cant))
+                )
+
             except (ValueError, AttributeError):
                 continue
 
         if not productos_parseados:
-            flash('Los productos enviados no son válidos.', 'danger')
-            return render_template('nueva_factura.html', form=form, servicios=servicios)
 
+            flash(
+                'Los productos enviados no son válidos.',
+                'danger'
+            )
+
+            return render_template(
+                'nueva_factura.html',
+                form=form,
+                servicios=servicios
+            )
+
+        # ========================================================
+        # CONEXIÓN PARA CREAR LA FACTURA
+        # ========================================================
         conn = get_connection()
+
         if not conn:
-            flash('Error de conexión a la base de datos.', 'danger')
-            return render_template('nueva_factura.html', form=form, servicios=servicios)
+
+            flash(
+                'Error de conexión a la base de datos.',
+                'danger'
+            )
+
+            return render_template(
+                'nueva_factura.html',
+                form=form,
+                servicios=servicios
+            )
+
+        cursor = None
 
         try:
-            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-            # 1. Obtener precios actuales de los productos
+            cursor = conn.cursor(
+                cursor_factory=psycopg2.extras.RealDictCursor
+            )
+
+            # ====================================================
+            # 1. OBTENER PRODUCTOS, PRECIOS Y VALIDAR STOCK
+            # ====================================================
             total = 0
             detalles_a_insertar = []
+
             for prod_id, cant in productos_parseados:
-                cursor.execute(
-                    'SELECT id, nombre, precio FROM productos WHERE id = %s',
-                    (prod_id,)
-                )
+
+                cursor.execute('''
+                    SELECT
+                        id,
+                        nombre,
+                        precio,
+                        stock
+                    FROM productos
+                    WHERE id = %s
+                    FOR UPDATE
+                ''', (prod_id,))
+
                 prod = cursor.fetchone()
+
+                # Si el producto no existe
                 if not prod:
                     continue
+
+                # -----------------------------------------------
+                # Validar cantidad
+                # -----------------------------------------------
+                if cant <= 0:
+
+                    conn.rollback()
+
+                    flash(
+                        f'La cantidad de "{prod["nombre"]}" '
+                        f'debe ser mayor a 0.',
+                        'danger'
+                    )
+
+                    return render_template(
+                        'nueva_factura.html',
+                        form=form,
+                        servicios=servicios
+                    )
+
+                # -----------------------------------------------
+                # Validar stock
+                # -----------------------------------------------
+                if prod['stock'] < cant:
+
+                    conn.rollback()
+
+                    flash(
+                        f'Stock insuficiente para '
+                        f'"{prod["nombre"]}". '
+                        f'Disponible: {prod["stock"]}, '
+                        f'solicitado: {cant}.',
+                        'danger'
+                    )
+
+                    return render_template(
+                        'nueva_factura.html',
+                        form=form,
+                        servicios=servicios
+                    )
+
+                # -----------------------------------------------
+                # Calcular subtotal
+                # -----------------------------------------------
                 subtotal = float(prod['precio']) * cant
+
                 total += subtotal
+
                 detalles_a_insertar.append({
                     'producto_id': prod['id'],
+                    'nombre': prod['nombre'],
                     'precio_unitario': float(prod['precio']),
                     'cantidad': cant,
-                    'subtotal': subtotal,
+                    'subtotal': subtotal
                 })
 
+            # ====================================================
+            # VERIFICAR QUE EXISTAN PRODUCTOS VÁLIDOS
+            # ====================================================
             if not detalles_a_insertar:
-                flash('No se encontraron productos válidos.', 'danger')
-                return render_template('nueva_factura.html', form=form, servicios=servicios)
 
-            # 2. Determinar tipo de pago y cuotas
+                conn.rollback()
+
+                flash(
+                    'No se encontraron productos válidos.',
+                    'danger'
+                )
+
+                return render_template(
+                    'nueva_factura.html',
+                    form=form,
+                    servicios=servicios
+                )
+
+            # ====================================================
+            # 2. DETERMINAR TIPO DE PAGO
+            # ====================================================
             tipo_pago = form.tipo_pago.data
-            num_cuotas = form.num_cuotas.data if tipo_pago == 'cuotas' else 1
 
-            # 3. Insertar factura
+            num_cuotas = (
+                form.num_cuotas.data
+                if tipo_pago == 'cuotas'
+                else 1
+            )
+
+            # Validación básica de cuotas
+            if tipo_pago == 'cuotas':
+
+                if not num_cuotas or num_cuotas <= 0:
+
+                    conn.rollback()
+
+                    flash(
+                        'El número de cuotas debe ser mayor a 0.',
+                        'danger'
+                    )
+
+                    return render_template(
+                        'nueva_factura.html',
+                        form=form,
+                        servicios=servicios
+                    )
+
+            # ====================================================
+            # 3. INSERTAR FACTURA
+            # ====================================================
             cursor.execute('''
                 INSERT INTO facturas
-                    (estudiante_id, usuario_id, total, tipo_pago, num_cuotas, estado)
+                    (
+                        estudiante_id,
+                        usuario_id,
+                        total,
+                        tipo_pago,
+                        num_cuotas,
+                        estado
+                    )
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
             ''', (
@@ -1245,13 +1435,26 @@ def nueva_factura():
                 num_cuotas,
                 'pendiente'
             ))
+
             factura_id = cursor.fetchone()['id']
 
-            # 4. Insertar detalles
+            # ====================================================
+            # 4. INSERTAR DETALLES Y DESCONTAR STOCK
+            # ====================================================
             for d in detalles_a_insertar:
+
+                # -----------------------------------------------
+                # Guardar detalle de factura
+                # -----------------------------------------------
                 cursor.execute('''
                     INSERT INTO detalle_factura
-                        (factura_id, producto_id, cantidad, precio_unitario, subtotal)
+                        (
+                            factura_id,
+                            producto_id,
+                            cantidad,
+                            precio_unitario,
+                            subtotal
+                        )
                     VALUES (%s, %s, %s, %s, %s)
                 ''', (
                     factura_id,
@@ -1261,46 +1464,143 @@ def nueva_factura():
                     d['subtotal']
                 ))
 
-            # 5. Crear cuotas/pagos
+                # -----------------------------------------------
+                # Descontar stock del producto
+                # -----------------------------------------------
+                cursor.execute('''
+                    UPDATE productos
+                    SET stock = stock - %s
+                    WHERE id = %s
+                ''', (
+                    d['cantidad'],
+                    d['producto_id']
+                ))
+
+            # ====================================================
+            # 5. CREAR CUOTAS / PAGOS
+            # ====================================================
             hoy = date.today()
+
+            # ----------------------------------------------------
+            # PAGO AL CONTADO
+            # ----------------------------------------------------
             if tipo_pago == 'contado':
-                # Un único pago con vencimiento hoy
+
                 cursor.execute('''
                     INSERT INTO pagos
-                        (factura_id, numero_cuota, monto, fecha_vencimiento, estado)
+                        (
+                            factura_id,
+                            numero_cuota,
+                            monto,
+                            fecha_vencimiento,
+                            estado
+                        )
                     VALUES (%s, %s, %s, %s, %s)
-                ''', (factura_id, 1, total, hoy, 'pendiente'))
+                ''', (
+                    factura_id,
+                    1,
+                    total,
+                    hoy,
+                    'pendiente'
+                ))
+
+            # ----------------------------------------------------
+            # PAGO EN CUOTAS
+            # ----------------------------------------------------
             else:
-                # Distribuir el total en N cuotas
-                monto_por_cuota = round(total / num_cuotas, 2)
-                # Ajustar la última cuota para que sume exactamente el total
+
+                monto_por_cuota = round(
+                    total / num_cuotas,
+                    2
+                )
+
                 acumulado = 0
+
                 for i in range(1, num_cuotas + 1):
+
+                    # Todas menos la última
                     if i < num_cuotas:
+
                         monto_cuota = monto_por_cuota
+
+                    # Última cuota
                     else:
-                        monto_cuota = round(total - acumulado, 2)
+
+                        monto_cuota = round(
+                            total - acumulado,
+                            2
+                        )
+
                     acumulado += monto_cuota
 
-                    fecha_venc = add_months(hoy, i - 1)
+                    fecha_venc = add_months(
+                        hoy,
+                        i - 1
+                    )
+
                     cursor.execute('''
                         INSERT INTO pagos
-                            (factura_id, numero_cuota, monto, fecha_vencimiento, estado)
+                            (
+                                factura_id,
+                                numero_cuota,
+                                monto,
+                                fecha_vencimiento,
+                                estado
+                            )
                         VALUES (%s, %s, %s, %s, %s)
-                    ''', (factura_id, i, monto_cuota, fecha_venc, 'pendiente'))
+                    ''', (
+                        factura_id,
+                        i,
+                        monto_cuota,
+                        fecha_venc,
+                        'pendiente'
+                    ))
 
+            # ====================================================
+            # 6. GUARDAR TODOS LOS CAMBIOS
+            # ====================================================
             conn.commit()
-            flash(f'Factura #{factura_id:04d} emitida correctamente.', 'success')
-            return redirect(url_for('ver_factura', id=factura_id))
 
+            flash(
+                f'Factura #{factura_id:04d} '
+                f'emitida correctamente.',
+                'success'
+            )
+
+            return redirect(
+                url_for(
+                    'ver_factura',
+                    id=factura_id
+                )
+            )
+
+        # ========================================================
+        # MANEJO DE ERRORES
+        # ========================================================
         except Exception as e:
+
             conn.rollback()
-            flash(f'Error al emitir la factura: {e}', 'danger')
+
+            flash(
+                f'Error al emitir la factura: {e}',
+                'danger'
+            )
+
         finally:
-            cursor.close()
+
+            if cursor:
+                cursor.close()
+
             conn.close()
 
-    return render_template('nueva_factura.html', form=form, servicios=servicios)
+    # ============================================================
+    # MOSTRAR FORMULARIO
+    # ============================================================
+    return render_template(
+        'nueva_factura.html',
+        form=form,
+        servicios=servicios
+    )
 
 
 # ------------------ VER DETALLE DE FACTURA ------------------

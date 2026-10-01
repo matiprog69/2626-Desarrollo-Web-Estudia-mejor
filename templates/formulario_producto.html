@@ -51,14 +51,14 @@
                                 {% endfor %}
                             </div>
 
-                            <!-- Duración -->
-                            <div class="col-md-4 mb-3">
-                                {{ form.duracion.label(class="form-label") }}
-                                {{ form.duracion(class="form-control", placeholder="Ej: 8 semanas") }}
-                                {% for error in form.duracion.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                            </div>
+                            <!-- Stock -->
+<div class="col-md-4 mb-3">
+    {{ form.stock.label(class="form-label") }}
+    {{ form.stock(class="form-control", placeholder="Ej: 20", min="0") }}
+    {% for error in form.stock.errors %}
+        <div class="text-danger small">{{ error }}</div>
+    {% endfor %}
+</div>
 
                             <!-- Modalidad -->
                             <div class="col-md-4 mb-3">
