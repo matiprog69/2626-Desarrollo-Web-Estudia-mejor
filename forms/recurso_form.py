@@ -1,25 +1,47 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectField, TextAreaField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional
+from wtforms import (
+    StringField, TextAreaField, IntegerField,
+    SelectField, SubmitField
+)
+from wtforms.validators import DataRequired, NumberRange, Optional, Length
+
 
 class RecursoForm(FlaskForm):
-    nombre = StringField('Nombre del recurso', validators=[
-        DataRequired(message='El nombre es obligatorio'),
-        Length(min=3, max=80)
-    ])
-    tipo = SelectField('Tipo de recurso', choices=[
-        ('', 'Selecciona un tipo'),
-        ('Libro', 'Libro'),
-        ('Video', 'Video'),
-        ('Artículo', 'Artículo'),
-        ('Software', 'Software'),
-        ('Otro', 'Otro')
-    ], validators=[DataRequired(message='Debes seleccionar un tipo')])
-    descripcion = TextAreaField('Descripción', validators=[
-        Optional(),
-        Length(max=200)
-    ])
-    cantidad = IntegerField('Cantidad disponible', validators=[
-        DataRequired(message='La cantidad es obligatoria'),
-        NumberRange(min=0)
-    ])
+    """Formulario para crear/editar recursos."""
+
+    nombre = StringField(
+        'Nombre del recurso',
+        validators=[
+            DataRequired(message='El nombre es obligatorio.'),
+            Length(min=3, max=100, message='El nombre debe tener entre 3 y 100 caracteres.')
+        ]
+    )
+
+    tipo = StringField(
+        'Tipo',
+        validators=[
+            DataRequired(message='El tipo es obligatorio.'),
+            Length(max=50)
+        ]
+    )
+
+    descripcion = TextAreaField(
+        'Descripción',
+        validators=[Optional(), Length(max=500)]
+    )
+
+    cantidad = IntegerField(
+        'Cantidad',
+        validators=[
+            DataRequired(message='La cantidad es obligatoria.'),
+            NumberRange(min=0, message='La cantidad debe ser mayor o igual a 0.')
+        ]
+    )
+
+    servicio_id = SelectField(
+        'Servicio asociado (opcional)',
+        coerce=int,
+        validators=[Optional()]
+    )
+
+    submit = SubmitField('Guardar')

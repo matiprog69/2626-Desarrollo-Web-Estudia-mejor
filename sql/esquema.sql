@@ -188,3 +188,46 @@ INSERT INTO productos (servicio_id, nombre, descripcion, precio, duracion, modal
 (3, 'Curso: Técnicas de estudio efectivas', 'Aprende técnicas como Pomodoro, Feynman y más.', 25.00, '4 semanas', 'Online'),
 (4, 'Acceso a Notion Pro (1 mes)', 'Licencia premium de Notion para estudiantes.', 8.00, '1 mes', 'Online'),
 (4, 'Licencia Anki (estudiantes)', 'Herramienta de repetición espaciada para memorizar.', 12.00, 'Anual', 'Online');
+
+
+-- ============================================================
+-- SEMANA 15 - ACTUALIZACIÓN: Pagos con método y monto
+-- ============================================================
+
+ALTER TABLE pagos ADD COLUMN IF NOT EXISTS monto_pagado NUMERIC(10, 2) DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS pagos_realizados (
+    id SERIAL PRIMARY KEY,
+    pago_id INT NOT NULL,
+    monto NUMERIC(10, 2) NOT NULL,
+    metodo_pago VARCHAR(30) NOT NULL,
+    fecha_pago TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pago_realizado
+        FOREIGN KEY (pago_id) REFERENCES pagos(id) ON DELETE CASCADE
+);
+
+
+-- ============================================================
+-- Relación Rendimiento ↔ Estudiantes (FK)
+-- ============================================================
+ALTER TABLE rendimiento ADD COLUMN IF NOT EXISTS estudiante_id INT;
+
+ALTER TABLE rendimiento
+DROP CONSTRAINT IF EXISTS fk_estudiante_rendimiento;
+
+ALTER TABLE rendimiento
+ADD CONSTRAINT fk_estudiante_rendimiento
+FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE;
+
+
+-- ============================================================
+-- Relación Recursos ↔ Servicios (FK)
+-- ============================================================
+ALTER TABLE recursos ADD COLUMN IF NOT EXISTS servicio_id INT;
+
+ALTER TABLE recursos
+DROP CONSTRAINT IF EXISTS fk_servicio_recurso;
+
+ALTER TABLE recursos
+ADD CONSTRAINT fk_servicio_recurso
+FOREIGN KEY (servicio_id) REFERENCES servicios(id) ON DELETE SET NULL;

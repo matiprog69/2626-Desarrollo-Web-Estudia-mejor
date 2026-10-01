@@ -1,71 +1,208 @@
 {% extends "base.html" %}
 
 {% block content %}
-<main class="container mt-4">
-    <section class="card p-4 shadow-sm mb-4">
-        <h3 class="text-center">Registrar nuevo rendimiento</h3>
-        <form method="POST" action="{{ url_for('rendimiento_lista') }}">
-            {{ form.hidden_tag() }}
-            <div class="row g-3">
-                <div class="col-md-4">
-                    {{ form.estudiante.label(class="form-label") }}
-                    {{ form.estudiante(class="form-control") }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.asignatura.label(class="form-label") }}
-                    {{ form.asignatura(class="form-control") }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.nota.label(class="form-label") }}
-                    {{ form.nota(class="form-control") }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.fecha.label(class="form-label") }}
-                    {{ form.fecha(class="form-control") }}
-                </div>
-                <div class="col-md-8">
-                    {{ form.observaciones.label(class="form-label") }}
-                    {{ form.observaciones(class="form-control", rows=2) }}
-                </div>
-            </div>
-            <div class="text-center mt-3">
-                <button type="submit" class="btn btn-primary">Agregar registro</button>
-            </div>
-        </form>
-    </section>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>Estudiante</th>
-                    <th>Asignatura</th>
-                    <th>Nota</th>
-                    <th>Fecha</th>
-                    <th>Observaciones</th>
-                    <th class="text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rend in lista_rendimientos %}
-                <tr>
-                    <td>{{ rend.estudiante }}</td>
-                    <td>{{ rend.asignatura }}</td>
-                    <td>{{ rend.nota }}</td>
-                    <td>{{ rend.fecha }}</td>
-                    <td>{{ rend.observaciones }}</td>
-                    <td class="text-center text-nowrap">
-                        <a href="{{ url_for('rendimiento_editar', id=rend.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                        <form method="POST" action="{{ url_for('rendimiento_eliminar', id=rend.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar registro?')">Eliminar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="6" class="text-center">No hay registros de rendimiento.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- ENCABEZADO -->
+<section class="container mt-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body text-center">
+            <h2 class="text-primary mb-2">📊 Gestión de Rendimiento</h2>
+            <p class="text-muted mb-0">
+                Registra y consulta las calificaciones de los estudiantes
+            </p>
+        </div>
     </div>
-</main>
+</section>
+
+<!-- ESTADÍSTICAS -->
+<section class="container">
+    <div class="row text-center g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">📝</div>
+                <h3 class="fw-bold text-primary mb-1">{{ stats.total }}</h3>
+                <p class="text-muted small mb-0">Registros totales</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">📈</div>
+                <h3 class="fw-bold text-success mb-1">
+                    {{ "%.2f"|format(stats.promedio) }}
+                </h3>
+                <p class="text-muted small mb-0">Promedio general</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">✅</div>
+                <h3 class="fw-bold text-info mb-1">{{ stats.aprobados }}</h3>
+                <p class="text-muted small mb-0">Aprobados (≥14)</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">📚</div>
+                <h3 class="fw-bold text-warning mb-1">{{ stats.asignaturas }}</h3>
+                <p class="text-muted small mb-0">Asignaturas</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TABLA -->
+<section class="container mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Registros de Rendimiento</h5>
+            <button type="button" class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#modalRendimiento">
+                ➕ Nuevo registro
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Estudiante</th>
+                            <th>Asignatura</th>
+                            <th class="text-center">Nota</th>
+                            <th>Fecha</th>
+                            <th>Observaciones</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in lista_rendimientos %}
+                        <tr>
+                            <td>{{ r.id }}</td>
+                            <td><strong>{{ r.estudiante_nombre or r.estudiante }}</strong></td>
+                            <td>{{ r.asignatura }}</td>
+                            <td class="text-center">
+                                {% if r.nota >= 18 %}
+                                    <span class="badge bg-success fs-6">{{ r.nota }}</span>
+                                {% elif r.nota >= 14 %}
+                                    <span class="badge bg-primary fs-6">{{ r.nota }}</span>
+                                {% elif r.nota >= 10 %}
+                                    <span class="badge bg-warning text-dark fs-6">{{ r.nota }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">{{ r.nota }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <span class="text-muted small">
+                                    {{ (r.observaciones or '—')[:50] }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('rendimiento_editar', id=r.id) }}"
+                                   class="btn btn-sm btn-warning">
+                                    ✏️ Editar
+                                </a>
+                                <form method="POST"
+                                      action="{{ url_for('rendimiento_eliminar', id=r.id) }}"
+                                      style="display: inline;"
+                                      onsubmit="return confirm('¿Eliminar este registro?');">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        🗑️ Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No hay registros de rendimiento aún.
+                                <br>
+                                <small>Usa "➕ Nuevo registro" para agregar el primero.</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalRendimiento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">➕ Nuevo registro de rendimiento</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Estudiante: ahora es SELECT -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.estudiante_id.label(class="form-label") }}
+                            {{ form.estudiante_id(class="form-select") }}
+                            {% for error in form.estudiante_id.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.asignatura.label(class="form-label") }}
+                            {{ form.asignatura(class="form-control",
+                                               placeholder="Ej: Matemáticas") }}
+                            {% for error in form.asignatura.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.nota.label(class="form-label") }}
+                            {{ form.nota(class="form-control", type="number",
+                                         step="0.01", min="0", max="20") }}
+                            {% for error in form.nota.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.fecha.label(class="form-label") }}
+                            {{ form.fecha(class="form-control", type="date") }}
+                            {% for error in form.fecha.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.observaciones.label(class="form-label") }}
+                        {{ form.observaciones(class="form-control", rows="3",
+                                              placeholder="Observaciones adicionales") }}
+                        {% for error in form.observaciones.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Guardar registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

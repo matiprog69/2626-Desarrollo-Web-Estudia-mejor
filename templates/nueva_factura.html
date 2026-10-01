@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>🧾 Nueva Factura</h1>
+                <a href="{{ url_for('facturas_lista') }}" class="btn btn-outline-secondary">
+                    ← Volver a facturas
+                </a>
+            </div>
+
+            <form method="POST" id="formFactura">
+                {{ form.hidden_tag() }}
+
+                <!-- ============ DATOS GENERALES ============ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Datos de la factura</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.estudiante_id.label(class="form-label") }}
+                                {{ form.estudiante_id(class="form-select") }}
+                                {% for error in form.estudiante_id.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ AGREGAR PRODUCTOS ============ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Agregar productos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-6">
+                                <label class="form-label">Producto / Servicio</label>
+                                <select id="selectProducto" class="form-select">
+                                    <option value="">-- Selecciona un producto --</option>
+                                    {% for s in servicios %}
+                                        <optgroup label="{{ s.nombre }}">
+                                            {% for p in s.productos %}
+                                                <option value="{{ p.id }}"
+                                                        data-nombre="{{ p.nombre }}"
+                                                        data-precio="{{ p.precio }}">
+                                                    {{ p.nombre }} — ${{ "%.2f"|format(p.precio) }}
+                                                </option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number" id="inputCantidad" class="form-control"
+                                       value="1" min="1" max="99">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" id="btnAgregar" class="btn btn-success w-100">
+                                    + Agregar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ CARRITO ============ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Detalle de la factura</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table align-middle" id="tablaCarrito">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center" style="width: 100px;">Cantidad</th>
+                                        <th class="text-end" style="width: 130px;">Precio</th>
+                                        <th class="text-end" style="width: 130px;">Subtotal</th>
+                                        <th style="width: 80px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="carritoBody">
+                                    <tr id="filaVacia">
+                                        <td colspan="5" class="text-center text-muted py-3">
+                                            No has agregado productos todavía.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-dark">
+                                        <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
+                                        <td class="text-end">
+                                            <strong>$<span id="totalFactura">0.00</span></strong>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ TIPO DE PAGO ============ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Forma de pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            {% for subfield in form.tipo_pago %}
+                                <div class="form-check form-check-inline">
+                                    {{ subfield(class="form-check-input", id="tp_" + subfield.data) }}
+                                    {{ subfield.label(class="form-check-label") }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div id="bloqueCuotas" class="mb-3" style="display: none;">
+                            {{ form.num_cuotas.label(class="form-label") }}
+                            {{ form.num_cuotas(class="form-select", id="selectCuotas") }}
+                            <small class="text-muted">
+                                La primera cuota vence al emitir la factura, las demás cada mes.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ BOTONES ============ -->
+                <div class="d-flex justify-content-end gap-2 mb-5">
+                    <a href="{{ url_for('facturas_lista') }}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg" id="btnEmitir" disabled>
+                        💾 Emitir factura
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<!-- ============================================================
+     JAVASCRIPT: Carrito de productos
+============================================================ -->
+<script>
+    // ============================================
+    // Datos iniciales
+    // ============================================
+    const carrito = [];  // [{ id, nombre, precio, cantidad }]
+
+    const selectProducto  = document.getElementById('selectProducto');
+    const inputCantidad   = document.getElementById('inputCantidad');
+    const btnAgregar      = document.getElementById('btnAgregar');
+    const carritoBody     = document.getElementById('carritoBody');
+    const totalSpan       = document.getElementById('totalFactura');
+    const btnEmitir       = document.getElementById('btnEmitir');
+    const bloqueCuotas    = document.getElementById('bloqueCuotas');
+    const selectCuotas    = document.getElementById('selectCuotas');
+    const radiosPago      = document.querySelectorAll('input[name="tipo_pago"]');
+
+    // ============================================
+    // Agregar producto al carrito
+    // ============================================
+    btnAgregar.addEventListener('click', () => {
+        const opt = selectProducto.options[selectProducto.selectedIndex];
+
+        if (!opt.value) {
+            alert('Selecciona un producto primero.');
+            return;
+        }
+
+        const id       = parseInt(opt.value);
+        const nombre   = opt.dataset.nombre;
+        const precio   = parseFloat(opt.dataset.precio);
+        const cantidad = parseInt(inputCantidad.value) || 1;
+
+        // Verificar si ya existe en el carrito
+        const existente = carrito.find(item => item.id === id);
+        if (existente) {
+            existente.cantidad += cantidad;
+        } else {
+            carrito.push({ id, nombre, precio, cantidad });
+        }
+
+        // Resetear selector
+        selectProducto.value = '';
+        inputCantidad.value  = 1;
+
+        renderizarCarrito();
+    });
+
+    // ============================================
+    // Quitar producto del carrito
+    // ============================================
+    function quitarProducto(index) {
+        carrito.splice(index, 1);
+        renderizarCarrito();
+    }
+
+    // ============================================
+    // Renderizar el carrito
+    // ============================================
+    function renderizarCarrito() {
+        // Limpiar
+        carritoBody.innerHTML = '';
+
+        if (carrito.length === 0) {
+            carritoBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-3">
+                        No has agregado productos todavía.
+                    </td>
+                </tr>
+            `;
+            totalSpan.textContent = '0.00';
+            btnEmitir.disabled = true;
+            return;
+        }
+
+        // Agregar filas
+        let total = 0;
+        carrito.forEach((item, index) => {
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td>${item.nombre}</td>
+                <td class="text-center">
+                    <input type="number"
+                           class="form-control form-control-sm text-center"
+                           value="${item.cantidad}"
+                           min="1" max="99"
+                           onchange="cambiarCantidad(${index}, this.value)">
+                </td>
+                <td class="text-end">$${item.precio.toFixed(2)}</td>
+                <td class="text-end fw-bold">$${subtotal.toFixed(2)}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger"
+                            onclick="quitarProducto(${index})">✕</button>
+                </td>
+            `;
+            carritoBody.appendChild(fila);
+        });
+
+        totalSpan.textContent = total.toFixed(2);
+        btnEmitir.disabled = false;
+    }
+
+    // ============================================
+    // Cambiar cantidad desde el carrito
+    // ============================================
+    function cambiarCantidad(index, valor) {
+        const cantidad = parseInt(valor);
+        if (isNaN(cantidad) || cantidad < 1) {
+            carrito[index].cantidad = 1;
+        } else {
+            carrito[index].cantidad = cantidad;
+        }
+        renderizarCarrito();
+    }
+
+    // ============================================
+    // Mostrar/ocultar bloque de cuotas
+    // ============================================
+    function actualizarTipoPago() {
+        const seleccionado = document.querySelector('input[name="tipo_pago"]:checked');
+        if (seleccionado && seleccionado.value === 'cuotas') {
+            bloqueCuotas.style.display = 'block';
+        } else {
+            bloqueCuotas.style.display = 'none';
+        }
+    }
+
+    radiosPago.forEach(radio => {
+        radio.addEventListener('change', actualizarTipoPago);
+    });
+
+    // Ejecutar al cargar
+    actualizarTipoPago();
+
+    // ============================================
+    // Al enviar: inyectar productos como inputs ocultos
+    // ============================================
+    document.getElementById('formFactura').addEventListener('submit', (e) => {
+        if (carrito.length === 0) {
+            e.preventDefault();
+            alert('Debes agregar al menos un producto.');
+            return;
+        }
+
+        // Limpiar inputs anteriores
+        document.querySelectorAll('input[name="productos[]"]').forEach(el => el.remove());
+
+        // Crear inputs ocultos: "producto_id|cantidad"
+        carrito.forEach(item => {
+            const input = document.createElement('input');
+            input.type  = 'hidden';
+            input.name  = 'productos[]';
+            input.value = `${item.id}|${item.cantidad}`;
+            document.getElementById('formFactura').appendChild(input);
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">{{ accion }} Categoría</h2>
+
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- Nombre -->
+                        <div class="mb-3">
+                            {{ form.nombre.label(class="form-label") }}
+                            {{ form.nombre(class="form-control", placeholder="Ej: Guías de estudio") }}
+                            {% for error in form.nombre.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            {{ form.descripcion.label(class="form-label") }}
+                            {{ form.descripcion(class="form-control", rows="3", placeholder="Describe brevemente esta categoría") }}
+                            {% for error in form.descripcion.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Ícono -->
+                        <div class="mb-3">
+                            {{ form.icono.label(class="form-label") }}
+                            {{ form.icono(class="form-control", placeholder="Ej: book, calendar, lightbulb, laptop") }}
+                            <small class="text-muted">
+                                Usa nombres de Bootstrap Icons (ej: book, calendar, lightbulb, laptop)
+                            </small>
+                            {% for error in form.icono.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Activo -->
+                        <div class="mb-3 form-check">
+                            {{ form.activo(class="form-check-input") }}
+                            {{ form.activo.label(class="form-check-label") }}
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_servicios') }}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

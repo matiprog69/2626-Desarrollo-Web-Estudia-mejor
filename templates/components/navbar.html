@@ -24,6 +24,33 @@
                         <a class="nav-link" href="{{ url_for('rendimiento_lista') }}">Rendimiento</a>
                     </li>
 
+                    <!-- ========== NUEVO: DROPDOWN SERVICIOS ========== -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            Servicios
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('servicios_publico') }}">
+                                    📋 Ver catálogo
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin_servicios') }}">
+                                    ⚙️ Administrar servicios
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+        
+                    <!-- ============================================== -->
+
+                    <li class="nav-item">
+    <a class="nav-link" href="{{ url_for('facturas_lista') }}">
+        🧾 Facturación
+    </a>
+</li>
                     <!-- Usuario autenticado -->
                     <li class="nav-item">
                         <span class="navbar-text text-warning ms-3 me-2">

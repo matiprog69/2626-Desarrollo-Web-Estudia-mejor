@@ -1,106 +1,211 @@
 {% extends "base.html" %}
 
 {% block content %}
-<main class="container mt-4">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <h2 class="text-center mb-4">Gestión de Estudiantes</h2>
-
-    <!-- FORMULARIO -->
-    <section class="card p-4 shadow-sm mb-4">
-        <h3 class="text-center">Registrar nuevo estudiante</h3>
-        <form method="POST" action="{{ url_for('estudiantes_lista') }}">
-            {{ form.hidden_tag() }}
-            <div class="row g-3">
-                <div class="col-md-4">
-                    {{ form.nombre.label(class="form-label") }}
-                    {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else "")) }}
-                    {% for error in form.nombre.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-4">
-                    {{ form.email.label(class="form-label") }}
-                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                    {% for error in form.email.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-4">
-                    {{ form.telefono.label(class="form-label") }}
-                    {{ form.telefono(class="form-control" + (" is-invalid" if form.telefono.errors else "")) }}
-                    {% for error in form.telefono.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-4">
-                    {{ form.carrera.label(class="form-label") }}
-                    {{ form.carrera(class="form-select" + (" is-invalid" if form.carrera.errors else "")) }}
-                    {% for error in form.carrera.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-8">
-                    {{ form.direccion.label(class="form-label") }}
-                    {{ form.direccion(class="form-control" + (" is-invalid" if form.direccion.errors else ""), rows=2) }}
-                    {% for error in form.direccion.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="text-center mt-3">
-                <button type="submit" class="btn btn-primary btn-lg">Agregar estudiante</button>
-            </div>
-        </form>
-    </section>
-
-    <!-- TABLA -->
-    <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Carrera</th>
-                    <th>Dirección</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for est in lista_estudiantes %}
-                <tr>
-                    <td>{{ est.nombre }}</td>
-                    <td>{{ est.email }}</td>
-                    <td>{{ est.telefono or '-' }}</td>
-                    <td>{{ est.carrera }}</td>
-                    <td>{{ est.direccion or '-' }}</td>
-                    <td class="text-nowrap">
-                        <a href="{{ url_for('estudiante_editar', id=est.id) }}" class="btn btn-sm btn-warning me-1">Editar</a>
-                        <form method="POST" action="{{ url_for('estudiante_eliminar', id=est.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro?')">Eliminar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center">No hay estudiantes registrados.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <p class="text-center fw-bold">Total: <span class="badge bg-primary">{{ lista_estudiantes|length }}</span></p>
+<!-- ENCABEZADO -->
+<section class="container mt-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body text-center">
+            <h2 class="text-primary mb-2">👥 Gestión de Estudiantes</h2>
+            <p class="text-muted mb-0">
+                Administra la información de los estudiantes registrados en el sistema
+            </p>
+        </div>
     </div>
+</section>
 
-</main>
+
+<!-- ESTADÍSTICAS -->
+<section class="container">
+    <div class="row text-center g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">👥</div>
+                <h3 class="fw-bold text-primary mb-1">{{ stats.total }}</h3>
+                <p class="text-muted small mb-0">Total estudiantes</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">🎓</div>
+                <h3 class="fw-bold text-success mb-1">{{ stats.carreras }}</h3>
+                <p class="text-muted small mb-0">Carreras distintas</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">📧</div>
+                <h3 class="fw-bold text-info mb-1">{{ stats.con_email }}</h3>
+                <p class="text-muted small mb-0">Con email</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm border-0 h-100 py-3">
+                <div class="fs-2 mb-2">🆕</div>
+                <h6 class="fw-bold text-warning mb-1 text-truncate"
+                    title="{{ stats.ultimo }}">
+                    {{ stats.ultimo }}
+                </h6>
+                <p class="text-muted small mb-0">Último registro</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- TABLA -->
+<section class="container mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lista de Estudiantes</h5>
+            <button type="button" class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#modalEstudiante">
+                ➕ Nuevo estudiante
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Carrera</th>
+                            <th>Dirección</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in lista_estudiantes %}
+                        <tr>
+                            <td>{{ e.id }}</td>
+                            <td><strong>{{ e.nombre }}</strong></td>
+                            <td>
+                                <a href="mailto:{{ e.email }}" class="text-decoration-none">
+                                    {{ e.email }}
+                                </a>
+                            </td>
+                            <td>{{ e.telefono or '—' }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ e.carrera }}</span>
+                            </td>
+                            <td>{{ e.direccion or '—' }}</td>
+                            <td class="text-center" style="white-space: nowrap;">
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="{{ url_for('perfil_estudiante', id=e.id) }}"
+           class="btn btn-info text-white"
+           title="Ver perfil">
+            👁️
+        </a>
+        <a href="{{ url_for('estudiante_editar', id=e.id) }}"
+           class="btn btn-warning"
+           title="Editar">
+            ✏️
+        </a>
+        <button type="button"
+                class="btn btn-danger"
+                title="Eliminar"
+                onclick="if(confirm('¿Eliminar a {{ e.nombre }}?')) { document.getElementById('form-elim-{{ e.id }}').submit(); }">
+            🗑️
+        </button>
+    </div>
+    <form id="form-elim-{{ e.id }}"
+          method="POST"
+          action="{{ url_for('estudiante_eliminar', id=e.id) }}"
+          style="display: none;">
+    </form>
+</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No hay estudiantes registrados aún.
+                                <br>
+                                <small>Usa "➕ Nuevo estudiante" para agregar el primero.</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- MODAL -->
+<div class="modal fade" id="modalEstudiante" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">➕ Registrar nuevo estudiante</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.nombre.label(class="form-label") }}
+                            {{ form.nombre(class="form-control", placeholder="Nombre completo") }}
+                            {% for error in form.nombre.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="correo@ejemplo.com") }}
+                            {% for error in form.email.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.telefono.label(class="form-label") }}
+                            {{ form.telefono(class="form-control", placeholder="0999999999") }}
+                            {% for error in form.telefono.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.carrera.label(class="form-label") }}
+                            {{ form.carrera(class="form-control", placeholder="Ej: Tecnologías de la Información") }}
+                            {% for error in form.carrera.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.direccion.label(class="form-label") }}
+                        {{ form.direccion(class="form-control", placeholder="Dirección completa") }}
+                        {% for error in form.direccion.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Guardar estudiante
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

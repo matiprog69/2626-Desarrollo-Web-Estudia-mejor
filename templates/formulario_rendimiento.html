@@ -1,51 +1,71 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ accion }} Registro de Rendimiento</h2>
-    <form method="POST" action="">
-        {{ form.hidden_tag() }}
-        <div class="row g-3">
-            <div class="col-md-6">
-                {{ form.estudiante.label(class="form-label") }}
-                {{ form.estudiante(class="form-control" + (" is-invalid" if form.estudiante.errors else "")) }}
-                {% for error in form.estudiante.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <div class="col-md-6">
-                {{ form.asignatura.label(class="form-label") }}
-                {{ form.asignatura(class="form-control" + (" is-invalid" if form.asignatura.errors else "")) }}
-                {% for error in form.asignatura.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <div class="col-md-4">
-                {{ form.nota.label(class="form-label") }}
-                {{ form.nota(class="form-control" + (" is-invalid" if form.nota.errors else "")) }}
-                {% for error in form.nota.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <div class="col-md-4">
-                {{ form.fecha.label(class="form-label") }}
-                {{ form.fecha(class="form-control" + (" is-invalid" if form.fecha.errors else ""), type="date") }}
-                {% for error in form.fecha.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
-            </div>
-            <div class="col-md-4">
-                {{ form.observaciones.label(class="form-label") }}
-                {{ form.observaciones(class="form-control" + (" is-invalid" if form.observaciones.errors else "")) }}
-                {% for error in form.observaciones.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                {% endfor %}
+<main class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">{{ accion }} Registro de Rendimiento</h2>
+
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.estudiante_id.label(class="form-label") }}
+                            {{ form.estudiante_id(class="form-select") }}
+                            {% for error in form.estudiante_id.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.asignatura.label(class="form-label") }}
+                            {{ form.asignatura(class="form-control") }}
+                            {% for error in form.asignatura.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.nota.label(class="form-label") }}
+                                {{ form.nota(class="form-control", type="number",
+                                             step="0.01", min="0", max="20") }}
+                                {% for error in form.nota.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                {{ form.fecha.label(class="form-label") }}
+                                {{ form.fecha(class="form-control", type="date") }}
+                                {% for error in form.fecha.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.observaciones.label(class="form-label") }}
+                            {{ form.observaciones(class="form-control", rows="3") }}
+                            {% for error in form.observaciones.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('rendimiento_lista') }}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                💾 Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="text-center mt-3">
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-            <a href="{{ url_for('rendimiento_lista') }}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
+    </div>
+</main>
 {% endblock %}

@@ -462,3 +462,52 @@ main{
 .container.mt-5 h2{
     color: #60a5fa !important;
 }
+/* ============================================================
+   HOME - Forzar color de texto oscuro en las tarjetas
+============================================================ */
+.home-cards h1,
+.home-cards h2,
+.home-cards h3,
+.home-cards h4,
+.home-cards h5,
+.home-cards h6,
+.home-cards p,
+.home-cards span,
+.home-cards li,
+.home-cards a {
+    color: #212529 !important;
+}
+
+/* Excepciones: los que van con colores específicos */
+.home-cards .text-primary { color: #0d6efd !important; }
+.home-cards .text-success { color: #198754 !important; }
+.home-cards .text-info { color: #0dcaf0 !important; }
+.home-cards .text-warning { color: #ffc107 !important; }
+.home-cards .text-danger { color: #dc3545 !important; }
+.home-cards .text-muted { color: #6c757d !important; }
+
+/* Los badges mantienen su color */
+.home-cards .badge {
+    color: inherit !important;
+}
+
+.home-cards .badge.bg-success { color: #fff !important; }
+.home-cards .badge.bg-primary { color: #fff !important; }
+.home-cards .badge.bg-warning { color: #000 !important; }
+
+/* ============================================================
+   HOME - Cards de servicios
+============================================================ */
+.servicio-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.servicio-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.servicio-icono {
+    font-size: 2.5rem;
+    line-height: 1;
+}
