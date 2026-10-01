@@ -92,20 +92,26 @@
                                 <span class="badge bg-primary">{{ act.categoria }}</span>
                             </td>
                             <td>{{ act.estudiante_nombre or '—' }}</td>
-                            <td class="text-center">
-                                <a href="{{ url_for('editar_actividad', id=act.id) }}"
-                                   class="btn btn-sm btn-warning">
-                                    ✏️ Editar
-                                </a>
-                                <form method="POST"
-                                      action="{{ url_for('eliminar_actividad', id=act.id) }}"
-                                      style="display: inline;"
-                                      onsubmit="return confirm('¿Eliminar esta actividad?');">
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        🗑️ Eliminar
-                                    </button>
-                                </form>
-                            </td>
+                            <td class="text-center" style="white-space: nowrap;">
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="{{ url_for('editar_actividad', id=act.id) }}"
+           class="btn btn-warning" title="Editar">
+            ✏️
+        </a>
+        <button type="button"
+                class="btn btn-danger"
+                title="Eliminar"
+                onclick="if(confirm('¿Eliminar esta actividad?')) { document.getElementById('form-elim-act-{{ act.id }}').submit(); }">
+            🗑️
+        </button>
+    </div>
+    <form id="form-elim-act-{{ act.id }}"
+          method="POST"
+          action="{{ url_for('eliminar_actividad', id=act.id) }}"
+          style="display: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    </form>
+</td>
                         </tr>
                         {% else %}
                         <tr>

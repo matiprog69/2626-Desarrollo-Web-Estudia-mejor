@@ -14,7 +14,6 @@
     </div>
 </section>
 
-
 <!-- ESTADÍSTICAS -->
 <section class="container">
     <div class="row text-center g-3 mb-4">
@@ -42,8 +41,7 @@
         <div class="col-md-3 col-6">
             <div class="card shadow-sm border-0 h-100 py-3">
                 <div class="fs-2 mb-2">🆕</div>
-                <h6 class="fw-bold text-warning mb-1 text-truncate"
-                    title="{{ stats.ultimo }}">
+                <h6 class="fw-bold text-warning mb-1 text-truncate" title="{{ stats.ultimo }}">
                     {{ stats.ultimo }}
                 </h6>
                 <p class="text-muted small mb-0">Último registro</p>
@@ -51,7 +49,6 @@
         </div>
     </div>
 </section>
-
 
 <!-- TABLA -->
 <section class="container mb-5">
@@ -88,42 +85,35 @@
                                 </a>
                             </td>
                             <td>{{ e.telefono or '—' }}</td>
-                            <td>
-                                <span class="badge bg-primary">{{ e.carrera }}</span>
-                            </td>
+                            <td><span class="badge bg-primary">{{ e.carrera }}</span></td>
                             <td>{{ e.direccion or '—' }}</td>
                             <td class="text-center" style="white-space: nowrap;">
-    <div class="btn-group btn-group-sm" role="group">
-        <a href="{{ url_for('perfil_estudiante', id=e.id) }}"
-           class="btn btn-info text-white"
-           title="Ver perfil">
-            👁️
-        </a>
-        <a href="{{ url_for('estudiante_editar', id=e.id) }}"
-           class="btn btn-warning"
-           title="Editar">
-            ✏️
-        </a>
-        <button type="button"
-                class="btn btn-danger"
-                title="Eliminar"
-                onclick="if(confirm('¿Eliminar a {{ e.nombre }}?')) { document.getElementById('form-elim-{{ e.id }}').submit(); }">
-            🗑️
-        </button>
-    </div>
-    <form id="form-elim-{{ e.id }}"
-          method="POST"
-          action="{{ url_for('estudiante_eliminar', id=e.id) }}"
-          style="display: none;">
-    </form>
-</td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('perfil_estudiante', id=e.id) }}"
+                                       class="btn btn-info text-white" title="Ver perfil">
+                                        👁️
+                                    </a>
+                                    <a href="{{ url_for('estudiante_editar', id=e.id) }}"
+                                       class="btn btn-warning" title="Editar">
+                                        ✏️
+                                    </a>
+                                    <button type="button" class="btn btn-danger" title="Eliminar"
+                                            onclick="if(confirm('¿Eliminar a {{ e.nombre }}?')) { document.getElementById('form-elim-est-{{ e.id }}').submit(); }">
+                                        🗑️
+                                    </button>
+                                </div>
+                                <form id="form-elim-est-{{ e.id }}"
+                                      method="POST"
+                                      action="{{ url_for('estudiante_eliminar', id=e.id) }}"
+                                      style="display: none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                </form>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
                                 No hay estudiantes registrados aún.
-                                <br>
-                                <small>Usa "➕ Nuevo estudiante" para agregar el primero.</small>
                             </td>
                         </tr>
                         {% endfor %}
@@ -134,20 +124,16 @@
     </div>
 </section>
 
-
 <!-- MODAL -->
 <div class="modal fade" id="modalEstudiante" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}
-
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">➕ Registrar nuevo estudiante</h5>
-                    <button type="button" class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -157,7 +143,6 @@
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
-
                         <div class="col-md-6 mb-3">
                             {{ form.email.label(class="form-label") }}
                             {{ form.email(class="form-control", placeholder="correo@ejemplo.com") }}
@@ -166,7 +151,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             {{ form.telefono.label(class="form-label") }}
@@ -175,16 +159,14 @@
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
-
                         <div class="col-md-6 mb-3">
                             {{ form.carrera.label(class="form-label") }}
-                            {{ form.carrera(class="form-control", placeholder="Ej: Tecnologías de la Información") }}
+                            {{ form.carrera(class="form-control", placeholder="Carrera") }}
                             {% for error in form.carrera.errors %}
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="mb-3">
                         {{ form.direccion.label(class="form-label") }}
                         {{ form.direccion(class="form-control", placeholder="Dirección completa") }}
@@ -193,15 +175,9 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        💾 Guardar estudiante
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar estudiante</button>
                 </div>
             </form>
         </div>

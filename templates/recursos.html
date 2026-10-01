@@ -41,8 +41,7 @@
         <div class="col-md-3 col-6">
             <div class="card shadow-sm border-0 h-100 py-3">
                 <div class="fs-2 mb-2">🆕</div>
-                <h6 class="fw-bold text-warning mb-1 text-truncate"
-                    title="{{ stats.ultimo }}">
+                <h6 class="fw-bold text-warning mb-1 text-truncate" title="{{ stats.ultimo }}">
                     {{ stats.ultimo }}
                 </h6>
                 <p class="text-muted small mb-0">Último registro</p>
@@ -80,9 +79,7 @@
                         <tr>
                             <td>{{ r.id }}</td>
                             <td><strong>{{ r.nombre }}</strong></td>
-                            <td>
-                                <span class="badge bg-secondary">{{ r.tipo }}</span>
-                            </td>
+                            <td><span class="badge bg-secondary">{{ r.tipo }}</span></td>
                             <td>
                                 {% if r.servicio_nombre %}
                                     <span class="badge bg-primary">{{ r.servicio_nombre }}</span>
@@ -91,18 +88,12 @@
                                 {% endif %}
                             </td>
                             <td>{{ r.descripcion or '—' }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-success">{{ r.cantidad }}</span>
-                            </td>
+                            <td class="text-center"><span class="badge bg-success">{{ r.cantidad }}</span></td>
                             <td class="text-center" style="white-space: nowrap;">
                                 <div class="btn-group btn-group-sm" role="group">
                                     <a href="{{ url_for('recurso_editar', id=r.id) }}"
-                                       class="btn btn-warning" title="Editar">
-                                        ✏️
-                                    </a>
-                                    <button type="button"
-                                            class="btn btn-danger"
-                                            title="Eliminar"
+                                       class="btn btn-warning" title="Editar">✏️</a>
+                                    <button type="button" class="btn btn-danger" title="Eliminar"
                                             onclick="if(confirm('¿Eliminar este recurso?')) { document.getElementById('form-elim-rec-{{ r.id }}').submit(); }">
                                         🗑️
                                     </button>
@@ -110,15 +101,15 @@
                                 <form id="form-elim-rec-{{ r.id }}"
                                       method="POST"
                                       action="{{ url_for('recurso_eliminar', id=r.id) }}"
-                                      style="display: none;"></form>
+                                      style="display: none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                </form>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
                                 No hay recursos registrados aún.
-                                <br>
-                                <small>Usa "➕ Nuevo recurso" para agregar el primero.</small>
                             </td>
                         </tr>
                         {% endfor %}
@@ -135,13 +126,10 @@
         <div class="modal-content">
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}
-
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">➕ Registrar nuevo recurso</h5>
-                    <button type="button" class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-8 mb-3">
@@ -151,24 +139,19 @@
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
-
                         <div class="col-md-4 mb-3">
                             {{ form.tipo.label(class="form-label") }}
-                            {{ form.tipo(class="form-control", placeholder="PDF, Video, etc.") }}
+                            {{ form.tipo(class="form-control", placeholder="PDF, Video...") }}
                             {% for error in form.tipo.errors %}
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="mb-3">
                         {{ form.servicio_id.label(class="form-label") }}
                         {{ form.servicio_id(class="form-select") }}
-                        <small class="text-muted">
-                            Vincula el recurso con el servicio al que pertenece (opcional).
-                        </small>
+                        <small class="text-muted">Vincula el recurso con un servicio (opcional).</small>
                     </div>
-
                     <div class="mb-3">
                         {{ form.descripcion.label(class="form-label") }}
                         {{ form.descripcion(class="form-control", rows="3") }}
@@ -176,7 +159,6 @@
                             <div class="text-danger small">{{ error }}</div>
                         {% endfor %}
                     </div>
-
                     <div class="mb-3">
                         {{ form.cantidad.label(class="form-label") }}
                         {{ form.cantidad(class="form-control", type="number", min="0") }}
@@ -185,13 +167,9 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">
-                        💾 Guardar recurso
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar recurso</button>
                 </div>
             </form>
         </div>

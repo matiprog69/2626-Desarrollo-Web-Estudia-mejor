@@ -27,9 +27,7 @@
         <div class="col-md-3 col-6">
             <div class="card shadow-sm border-0 h-100 py-3">
                 <div class="fs-2 mb-2">📈</div>
-                <h3 class="fw-bold text-success mb-1">
-                    {{ "%.2f"|format(stats.promedio) }}
-                </h3>
+                <h3 class="fw-bold text-success mb-1">{{ "%.2f"|format(stats.promedio) }}</h3>
                 <p class="text-muted small mb-0">Promedio general</p>
             </div>
         </div>
@@ -92,23 +90,21 @@
                                 {% endif %}
                             </td>
                             <td>{{ r.fecha.strftime('%d/%m/%Y') }}</td>
-                            <td>
-                                <span class="text-muted small">
-                                    {{ (r.observaciones or '—')[:50] }}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <a href="{{ url_for('rendimiento_editar', id=r.id) }}"
-                                   class="btn btn-sm btn-warning">
-                                    ✏️ Editar
-                                </a>
-                                <form method="POST"
-                                      action="{{ url_for('rendimiento_eliminar', id=r.id) }}"
-                                      style="display: inline;"
-                                      onsubmit="return confirm('¿Eliminar este registro?');">
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        🗑️ Eliminar
+                            <td><span class="text-muted small">{{ (r.observaciones or '—')[:50] }}</span></td>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('rendimiento_editar', id=r.id) }}"
+                                       class="btn btn-warning" title="Editar">✏️</a>
+                                    <button type="button" class="btn btn-danger" title="Eliminar"
+                                            onclick="if(confirm('¿Eliminar este registro?')) { document.getElementById('form-elim-ren-{{ r.id }}').submit(); }">
+                                        🗑️
                                     </button>
+                                </div>
+                                <form id="form-elim-ren-{{ r.id }}"
+                                      method="POST"
+                                      action="{{ url_for('rendimiento_eliminar', id=r.id) }}"
+                                      style="display: none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 </form>
                             </td>
                         </tr>
@@ -116,8 +112,6 @@
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
                                 No hay registros de rendimiento aún.
-                                <br>
-                                <small>Usa "➕ Nuevo registro" para agregar el primero.</small>
                             </td>
                         </tr>
                         {% endfor %}
@@ -134,16 +128,12 @@
         <div class="modal-content">
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}
-
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">➕ Nuevo registro de rendimiento</h5>
-                    <button type="button" class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
                     <div class="row">
-                        <!-- Estudiante: ahora es SELECT -->
                         <div class="col-md-6 mb-3">
                             {{ form.estudiante_id.label(class="form-label") }}
                             {{ form.estudiante_id(class="form-select") }}
@@ -151,17 +141,14 @@
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
-
                         <div class="col-md-6 mb-3">
                             {{ form.asignatura.label(class="form-label") }}
-                            {{ form.asignatura(class="form-control",
-                                               placeholder="Ej: Matemáticas") }}
+                            {{ form.asignatura(class="form-control", placeholder="Ej: Matemáticas") }}
                             {% for error in form.asignatura.errors %}
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             {{ form.nota.label(class="form-label") }}
@@ -171,7 +158,6 @@
                                 <div class="text-danger small">{{ error }}</div>
                             {% endfor %}
                         </div>
-
                         <div class="col-md-6 mb-3">
                             {{ form.fecha.label(class="form-label") }}
                             {{ form.fecha(class="form-control", type="date") }}
@@ -180,25 +166,17 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="mb-3">
                         {{ form.observaciones.label(class="form-label") }}
-                        {{ form.observaciones(class="form-control", rows="3",
-                                              placeholder="Observaciones adicionales") }}
+                        {{ form.observaciones(class="form-control", rows="3") }}
                         {% for error in form.observaciones.errors %}
                             <div class="text-danger small">{{ error }}</div>
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        💾 Guardar registro
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar registro</button>
                 </div>
             </form>
         </div>

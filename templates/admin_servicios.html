@@ -28,7 +28,7 @@
                             <th>Descripción</th>
                             <th>Ícono</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -45,14 +45,22 @@
                                     <span class="badge bg-secondary">Inactivo</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{{ url_for('editar_servicio', id=s.id) }}" class="btn btn-sm btn-warning">
-                                    Editar
-                                </a>
-                                <form method="POST" action="{{ url_for('eliminar_servicio', id=s.id) }}"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('¿Eliminar esta categoría? Se eliminarán también sus productos.');">
-                                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('editar_servicio', id=s.id) }}"
+                                       class="btn btn-warning" title="Editar">
+                                        ✏️
+                                    </a>
+                                    <button type="button" class="btn btn-danger" title="Eliminar"
+                                            onclick="if(confirm('¿Eliminar esta categoría? Se eliminarán también sus productos.')) { document.getElementById('form-elim-serv-{{ s.id }}').submit(); }">
+                                        🗑️
+                                    </button>
+                                </div>
+                                <form id="form-elim-serv-{{ s.id }}"
+                                      method="POST"
+                                      action="{{ url_for('eliminar_servicio', id=s.id) }}"
+                                      style="display: none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 </form>
                             </td>
                         </tr>
@@ -89,7 +97,7 @@
                             <th>Duración</th>
                             <th>Modalidad</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,14 +116,22 @@
                                     <span class="badge bg-secondary">Inactivo</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{{ url_for('editar_producto', id=p.id) }}" class="btn btn-sm btn-warning">
-                                    Editar
-                                </a>
-                                <form method="POST" action="{{ url_for('eliminar_producto', id=p.id) }}"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('¿Eliminar este producto?');">
-                                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('editar_producto', id=p.id) }}"
+                                       class="btn btn-warning" title="Editar">
+                                        ✏️
+                                    </a>
+                                    <button type="button" class="btn btn-danger" title="Eliminar"
+                                            onclick="if(confirm('¿Eliminar este producto?')) { document.getElementById('form-elim-prod-{{ p.id }}').submit(); }">
+                                        🔒 Desactivar
+                                    </button>
+                                </div>
+                                <form id="form-elim-prod-{{ p.id }}"
+                                      method="POST"
+                                      action="{{ url_for('eliminar_producto', id=p.id) }}"
+                                      style="display: none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 </form>
                             </td>
                         </tr>

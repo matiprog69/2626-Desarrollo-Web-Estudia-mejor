@@ -456,14 +456,40 @@ def estudiante_editar(id):
 def estudiante_eliminar(id):
     conn = get_connection()
     if conn:
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM estudiantes WHERE id = %s', (id,))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        flash('Estudiante eliminado correctamente', 'info')
+        try:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM estudiantes WHERE id = %s', (id,))
+            conn.commit()
+            flash('Estudiante eliminado correctamente.', 'info')
+        except psycopg2.IntegrityError as e:
+            conn.rollback()
+            if 'fk_estudiante_factura' in str(e):
+                flash(
+                    'No se puede eliminar: este estudiante tiene facturas asociadas. '
+                    'Elimina primero sus facturas.',
+                    'danger'
+                )
+            elif 'actividades' in str(e):
+                flash(
+                    'No se puede eliminar: este estudiante tiene actividades asignadas. '
+                    'Elimina primero sus actividades.',
+                    'danger'
+                )
+            elif 'rendimiento' in str(e):
+                flash(
+                    'No se puede eliminar: este estudiante tiene registros de rendimiento. '
+                    'Elimina primero sus registros.',
+                    'danger'
+                )
+            else:
+                flash(f'No se puede eliminar el estudiante: {e}', 'danger')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error inesperado: {e}', 'danger')
+        finally:
+            cursor.close()
+            conn.close()
     return redirect(url_for('estudiantes_lista'))
-
 
 # ==================================================================
 #                       MÓDULO RECURSOS
@@ -935,7 +961,6 @@ def editar_servicio(id):
     conn.close()
     return render_template('formulario_servicio.html', form=form, accion='Editar')
 
-
 @app.route('/servicios/eliminar/<int:id>', methods=['POST'])
 @login_required
 def eliminar_servicio(id):
@@ -945,15 +970,24 @@ def eliminar_servicio(id):
             cursor = conn.cursor()
             cursor.execute('DELETE FROM servicios WHERE id = %s', (id,))
             conn.commit()
-            flash('Categoría eliminada', 'info')
+            flash('Categoría eliminada correctamente.', 'info')
+        except psycopg2.IntegrityError as e:
+            conn.rollback()
+            if 'fk_servicio_recurso' in str(e) or 'recursos' in str(e):
+                flash(
+                    'No se puede eliminar: esta categoría tiene recursos asociados. '
+                    'Elimina primero sus recursos o desactívala.',
+                    'danger'
+                )
+            else:
+                flash(f'No se puede eliminar la categoría: {e}', 'danger')
         except Exception as e:
             conn.rollback()
-            flash(f'Error: {e}', 'danger')
+            flash(f'Error inesperado: {e}', 'danger')
         finally:
             cursor.close()
             conn.close()
     return redirect(url_for('admin_servicios'))
-
 
 # ------------------ CRUD PRODUCTOS ------------------
 @app.route('/productos/nuevo', methods=['GET', 'POST'])
@@ -1058,6 +1092,24 @@ def editar_producto(id):
     return render_template('formulario_producto.html', form=form, accion='Editar')
 
 
+@app.route('/productos/desactivar/<int:id>', methods=['POST'])
+@login_required
+def desactivar_producto(id):
+    conn = get_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE productos SET activo = FALSE WHERE id = %s', (id,))
+            conn.commit()
+            flash('Producto desactivado. Ya no aparecerá en el catálogo.', 'info')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error: {e}', 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    return redirect(url_for('admin_servicios'))
+
 @app.route('/productos/eliminar/<int:id>', methods=['POST'])
 @login_required
 def eliminar_producto(id):
@@ -1067,14 +1119,26 @@ def eliminar_producto(id):
             cursor = conn.cursor()
             cursor.execute('DELETE FROM productos WHERE id = %s', (id,))
             conn.commit()
-            flash('Producto eliminado', 'info')
+            flash('Producto eliminado correctamente.', 'info')
+        except psycopg2.IntegrityError as e:
+            conn.rollback()
+            if 'fk_producto' in str(e) or 'detalle_factura' in str(e):
+                flash(
+                    'No se puede eliminar: este producto ya fue usado en una factura. '
+                    'En lugar de eliminarlo, edítalo y desactívalo.',
+                    'danger'
+                )
+            else:
+                flash(f'No se puede eliminar el producto: {e}', 'danger')
         except Exception as e:
             conn.rollback()
-            flash(f'Error: {e}', 'danger')
+            flash(f'Error inesperado: {e}', 'danger')
         finally:
             cursor.close()
             conn.close()
     return redirect(url_for('admin_servicios'))
+
+
 
 # ==================================================================
 #               MÓDULO FACTURACIÓN (Semana 15)
